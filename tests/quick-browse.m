@@ -323,6 +323,19 @@ int main(void) {
         CAAnimationGroup *backdrop=(id)[peek.backdropLayer animationForKey:@"DiaTweaks.Peek.Depth"];
         CABasicAnimation *contentFade=(id)backdrop.animations.lastObject;
         NSCAssert([contentFade.keyPath isEqual:@"opacity"] && fabs([contentFade.toValue doubleValue]-0.2)<0.001,@"background content fades to twenty percent opacity");
+        NSRect originalPeekFrame=peek.frame;
+        for (NSNumber *width in @[@780, @781, @783.5, @1141, @1493]) {
+            peek.frame=NSMakeRect(NSMinX(originalPeekFrame),NSMinY(originalPeekFrame),width.doubleValue,701);
+            peek.needsLayout=YES; [peek layoutSubtreeIfNeeded];
+            NSRect pixels=[peek convertRectToBacking:peek.card.frame];
+            for (NSNumber *edge in @[@(NSMinX(pixels)),@(NSMaxX(pixels)),@(NSMinY(pixels)),@(NSMaxY(pixels))])
+                NSCAssert(fabs(edge.doubleValue-round(edge.doubleValue))<0.001,@"card edges land on physical pixels at odd and fractional widths");
+            NSRect clipPixels=[peek.clip convertRectToBacking:peek.clip.bounds], hostPixels=[peek.clip convertRectToBacking:peek.host.frame];
+            NSCAssert(NSContainsRect(hostPixels,clipPixels) && fabs(NSWidth(hostPixels)-NSWidth(clipPixels)-2)<0.001,
+                @"the web surface covers the clipped edge with a physical pixel on each side");
+        }
+        NSCAssert(CGColorGetAlpha(peek.clip.layer.backgroundColor)==0,@"no white backing can bleed beside the compositor's edge");
+        peek.frame=originalPeekFrame; peek.needsLayout=YES; [peek layoutSubtreeIfNeeded];
         NSPoint sidebarPoint=[window.contentView.superview convertPoint:NSMakePoint(265,55) fromView:window.contentView];
         NSView *sidebarHit=[window.contentView hitTest:sidebarPoint];
         NSCAssert(sidebarHit==sidebarButton || [sidebarHit isDescendantOf:sidebarButton],@"a revealed sidebar remains above Peek and receives clicks");
@@ -381,7 +394,14 @@ int main(void) {
         [peek close:1]; [peek close:0]; drain(0.40);
         NSCAssert(promoted==beforePromotion && closed==beforeClose+1 && !DPPeekCardIn(window),@"Escape cancels an in-flight expansion once");
         DPPeekOpen(window,url,NSMakePoint(500,500),delegate,sourcePage);
-        peek=DPPeekCardIn(window); [peek close:0]; drain(0.30);
+        peek=DPPeekCardIn(window); [peek close:0];
+        CAAnimationGroup *dismiss=(id)[peek.card.layer animationForKey:@"peek"];
+        NSCAssert(dismiss.duration>=0.20,@"dismissal gives the page time to fade smoothly");
+        CABasicAnimation *recede=(id)dismiss.animations.firstObject;
+        CGFloat closeScale=[recede.toValue CATransform3DValue].m11;
+        NSCAssert(closeScale>0.9 && closeScale<1,@"closing gently recedes instead of collapsing the full page into a tiny link");
+        drain(0.10); NSCAssert(peek.superview,@"the live page remains attached during the close transition");
+        drain(0.20);
         NSCAssert(peek.controls.alphaValue==0 && !peek.superview,@"late opening callback cannot resurrect controls");
 
         NSRect tab=NSMakeRect(10,20,300,37), pin=NSMakeRect(10,20,64,41);

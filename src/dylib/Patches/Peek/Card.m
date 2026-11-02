@@ -9,17 +9,22 @@
 // Arc's card is nearly full height and inset at the sides, with the controls in the right margin.
 - (NSRect)cardFrame {
     CGFloat inset = MIN(MAX(54, NSWidth(self.bounds) * 0.10), NSWidth(self.bounds) / 4);
-    return NSInsetRect(self.bounds, inset, MAX(10, NSHeight(self.bounds) * 0.012));
+    NSRect frame = NSInsetRect(self.bounds, inset, MAX(10, NSHeight(self.bounds) * 0.012));
+    return [self backingAlignedRect:frame options:NSAlignAllEdgesNearest];
 }
 
 - (void)layout {
     [super layout];
     self.card.frame = self.cardFrame;
     self.clip.frame = self.card.bounds;
-    self.host.frame = self.clip.bounds;
+    // Keep compositor rounding underneath the clip, including at fractional window sizes.
+    CGFloat pixel = 1 / MAX(1, self.window.backingScaleFactor);
+    self.host.frame = NSInsetRect(self.clip.bounds, -pixel, -pixel);
     NSSize size = self.controls.frame.size;
     self.controls.frame = (NSRect){{MIN(NSMaxX(self.card.frame) + 6, NSWidth(self.bounds) - size.width - 5), NSMinY(self.card.frame) + 2}, size};
 }
+
+- (void)viewDidChangeBackingProperties { [super viewDidChangeBackingProperties]; self.needsLayout = YES; }
 
 // Follows the page area as the sidebar opens and closes.
 - (void)followPane {
@@ -50,7 +55,11 @@
     if (self.closing && !(self.expanding && exit == 0)) return;
     self.closing = YES;
     self.expanding = exit != 0;
-    self.controls.alphaValue = 0;
+    [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
+        context.duration = NSWorkspace.sharedWorkspace.accessibilityDisplayShouldReduceMotion ? 0.08 : 0.12;
+        context.timingFunction = DPPeekClosingEase();
+        self.controls.animator.alphaValue = 0;
+    }];
     if (exit) [self animateExpand:exit completion:^{ [self finish:exit]; }];
     else [self animateOut:^{ [self finish:0]; }];
 }

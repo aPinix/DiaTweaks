@@ -42,3 +42,9 @@ The final Peek changes were built, installed and checked in this existing Dia in
 ## Remaining manual coverage
 
 The fixtures replace private classes; they do not prove compatibility with every Dia version. Native edge-hover sidebar reveal, the close-button hover beside a regular row badge, private windows, a second profile, external links through the OS default-browser route and website permission prompts still need manual coverage. Sidebar stacking and close-button spacing have fixture coverage, but those fixtures are not a substitute for the remaining pointer-driven checks. The missing upstream wiki pages and previews still require a maintainer before merge. No upstream PR has been submitted.
+
+## Edge seam and dismissal follow-up
+
+The follow-up build also passes `make`, `make test-quick-browse`, and all 34 native scenarios in each layout. Its reports are `build/test-sidebar-seam.json` and `build/test-top-seam.json`. The new fixture cases check physical pixel alignment at odd and fractional widths, a one-pixel margin beneath the clip, transparent backing, and keeping the live page attached through a gentle dismissal. A close before the first display tick now uses the opening seed rather than jumping to the full-size model.
+
+Native window captures of the yellow Dia page check the straight right edge in both layouts: `build/proof/peek-seam-sidebar-window.png` and `build/proof/peek-seam-top-window.png`. `build/proof/peek-seam-close-before.mp4` preserves the earlier collapse animation; `build/proof/peek-seam-close-after.mp4` records the new close and reopening. The encoded recordings use the contribution guide's 1120×700, 60 fps H.264 settings. All proof remains local and ignored by Git.

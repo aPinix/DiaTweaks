@@ -42,7 +42,8 @@ DPPeekCard *DPPeekShowCard(NSWindow *window, id<DPPeekPage> page, NSPoint origin
     peek.card.layer.shadowRadius = 24;
     peek.card.layer.shadowOffset = CGSizeMake(0, -6);
     peek.clip = DPLayerView();
-    peek.clip.layer.backgroundColor = NSColor.windowBackgroundColor.CGColor;
+    // Chromium paints its own background. An opaque backing can bleed through its rounded edge.
+    peek.clip.layer.backgroundColor = NSColor.clearColor.CGColor;
     peek.clip.layer.cornerRadius = 10;
     peek.clip.layer.cornerCurve = kCACornerCurveContinuous;
     peek.clip.layer.masksToBounds = YES;

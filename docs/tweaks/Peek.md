@@ -6,13 +6,14 @@ Enable **Settings → Patches → Browsing → Peek**, or `diatweaks enable peek
 
 - Shift-click a link. A card opens over the page, while the background scales to 97.5% around its center. The sidebar remains usable.
 - The whole browser-content frame, including its rounded edge, stays sharp and fades to 20% opacity. The native window theme shows through beneath it. Peek sits immediately above that frame and below the native sidebar, so revealing a hidden sidebar keeps it above the preview.
-- Press Escape or ⌘W, use the close button, or click outside the card to dismiss it.
+- Card edges align to physical pixels. The webpage extends one pixel underneath the rounded clip, preventing a backing strip from appearing beside the content at fractional sizes.
+- Press Escape or ⌘W, use the close button, or click outside the card to dismiss it. Closing uses a gentle 4% recession and a 220 ms fade, with the controls fading out and the page behind returning together.
 - Click **Open as Tab** or press ⌘O to expand the card into a regular tab. The existing live page keeps its state and navigation history.
 - Use the split button to animate the preview into Dia’s split view.
 - The three 34-point circular controls sit in the right margin, inset from the card’s top. Their symbols use centered vector strokes at the display’s backing scale. Each circle has space inside its button area to grow without clipping. Hover and press feedback animate from their current state; Reduce Motion keeps that feedback stationary.
 - A favicon badge identifies the source tab: inside the right edge for a row, or overlapping the top-right corner for a pinned tile. A tab row reserves a separate slot, keeping Dia’s close button to the favicon’s left and shortening long titles as needed. The badge updates as the preview’s favicon loads and disappears when Peek closes; the row then regains its full width.
 
-Only one Peek stays open per source window. It follows that window when moved or resized and closes with it. Turning the patch off closes its previews immediately. It works with both sidebar and top tabs.
+Only one Peek stays open per source window. It follows that window when moved or resized and closes with it. Turning the patch off dismisses its previews. It works with both sidebar and top tabs.
 
 ## Limits
 

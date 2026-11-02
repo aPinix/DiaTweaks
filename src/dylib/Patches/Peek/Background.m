@@ -28,7 +28,7 @@ CATransform3D DPPeekDepth(NSRect bounds, CGFloat scale) {
     depth.duration = fade.duration = duration;
     CAAnimationGroup *group = [CAAnimationGroup animation];
     group.animations = reduce ? @[fade] : @[depth, fade]; group.duration = duration;
-    group.timingFunction = [CAMediaTimingFunction functionWithControlPoints:0.2 :0.9 :0.25 :1];
+    group.timingFunction = inward || self.expanding ? [CAMediaTimingFunction functionWithControlPoints:0.2 :0.9 :0.25 :1] : DPPeekClosingEase();
     group.fillMode = kCAFillModeForwards; group.removedOnCompletion = NO;
     [layer addAnimation:group forKey:@"DiaTweaks.Peek.Depth"];
 }

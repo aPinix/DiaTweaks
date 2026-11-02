@@ -60,6 +60,7 @@ BOOL DPPeekShows(id page);
 void DPPeekLoad(id page, NSURL *url);
 CATransform3D DPPeekSqueeze(NSRect card, NSRect rect);
 CATransform3D DPPeekDepth(NSRect bounds, CGFloat scale);
+CAMediaTimingFunction *DPPeekClosingEase(void);
 void DPPeekStartIndicator(DPPeekCard *peek);
 void DPPeekStopIndicator(DPPeekCard *peek);
 void DPPeekRememberClick(NSWindow *window, NSEventModifierFlags flags);
