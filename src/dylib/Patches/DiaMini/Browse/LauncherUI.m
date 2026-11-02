@@ -1,4 +1,4 @@
-#import "Launcher.h"
+#import "../Search/Provider.h"
 
 @interface DPMiniSearchPanel : NSWindow
 @end
@@ -32,9 +32,7 @@
 
 @implementation DPMiniLauncher (UI)
 - (void)buildLauncher {
-    NSScreen *screen = NSScreen.mainScreen;
-    for (NSScreen *candidate in NSScreen.screens) if (NSPointInRect(NSEvent.mouseLocation, candidate.frame)) { screen = candidate; break; }
-    NSRect frame = DPBrowseLauncherFrame(screen.visibleFrame, 130);
+    NSRect frame = [self launcherFrameForHeight:130];
     CGFloat width = NSWidth(frame);
     NSWindow *panel = [[DPMiniSearchPanel alloc] initWithContentRect:frame styleMask:NSWindowStyleMaskBorderless
         backing:NSBackingStoreBuffered defer:NO];
@@ -50,6 +48,7 @@
     root.layer.borderWidth = 0.5; root.layer.borderColor = NSColor.separatorColor.CGColor;
     panel.contentView = root;
     NSImageView *glass = [[NSImageView alloc] initWithFrame:NSMakeRect(24, (DPMiniHeaderHeight - 16) / 2, 16, 16)];
+    self.searchIcon = glass;
     glass.identifier = @"DiaMiniSearchIcon";
     glass.image = [NSImage imageWithSystemSymbolName:@"magnifyingglass" accessibilityDescription:nil]; [root addSubview:glass];
     self.search = [[NSTextField alloc] initWithFrame:NSMakeRect(50, 17, width - 104, 30)];
@@ -59,15 +58,21 @@
     CGFloat textHeight = self.search.fittingSize.height;
     self.search.frame = NSMakeRect(50, (DPMiniHeaderHeight - textHeight) / 2, width - 104, textHeight);
     self.search.delegate = self; self.search.target = self; self.search.action = @selector(choose:);
-    self.search.accessibilityIdentifier = @"DiaMiniSearchField"; self.search.accessibilityLabel = @"Search or Enter URL";
+    self.search.accessibilityIdentifier = self.commandBar ? @"DiaCommandBarSearchField" : @"DiaMiniSearchField";
+    self.search.accessibilityLabel = @"Search or Enter URL";
     [root addSubview:self.search];
-    NSButton *close = [NSButton buttonWithImage:[NSImage imageWithSystemSymbolName:@"xmark" accessibilityDescription:@"Close Dia Mini"] target:self action:@selector(dismiss:)];
+    NSString *closeLabel = self.commandBar ? @"Close Command Bar" : @"Close Dia Mini";
+    NSButton *close = [NSButton buttonWithImage:[NSImage imageWithSystemSymbolName:@"xmark" accessibilityDescription:closeLabel] target:self action:@selector(dismiss:)];
+    self.closeButton = close;
     close.frame = NSMakeRect(width - 46, 20, 24, 24); close.bordered = NO;
+    close.autoresizingMask = NSViewMinXMargin;
     close.wantsLayer = YES; close.layer.cornerRadius = 6;
     close.layer.backgroundColor = [NSColor.controlColor colorWithAlphaComponent:0.4].CGColor;
     [root addSubview:close];
+    [self buildSiteSearch];
     NSBox *divider = [[NSBox alloc] initWithFrame:NSMakeRect(10, DPMiniHeaderHeight, width - 20, 1)];
     divider.boxType = NSBoxSeparator; divider.identifier = @"DiaMiniSearchDivider"; [root addSubview:divider];
+    divider.autoresizingMask = NSViewWidthSizable;
     self.table = [[DPMiniSuggestionTable alloc] initWithFrame:NSZeroRect]; self.table.headerView = nil;
     self.table.style = NSTableViewStylePlain;
     self.table.backgroundColor = NSColor.clearColor; self.table.rowHeight = DPMiniRowHeight; self.table.intercellSpacing = NSZeroSize;

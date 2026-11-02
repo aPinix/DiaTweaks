@@ -22,7 +22,10 @@ void DPTestMiniLauncherLayout(DPMiniLauncher *launcher) {
         launcher.search.stringValue = query; [launcher setResults:many];
         NSCAssert(launcher.suggestions.count == 5 && launcher.table.numberOfRows == 5, @"recents and searches offer five choices");
         NSCAssert(launcher.status.hidden && !launcher.scroll.hidden, @"results have no bottom hint row");
-        NSCAssert(NSContainsRect(launcher.table.visibleRect, [launcher.table rectOfRow:4]), @"all five choices fit without scrolling");
+        NSCAssert(NSContainsRect(launcher.table.visibleRect, [launcher.table rectOfRow:4]),
+            @"all five choices fit without scrolling (visible=%@ row=%@ scroll=%@ panel=%@ root=%@ loaded=%d)",
+            NSStringFromRect(launcher.table.visibleRect), NSStringFromRect([launcher.table rectOfRow:4]),
+            NSStringFromRect(launcher.scroll.frame), NSStringFromRect(launcher.window.frame), NSStringFromRect(root.bounds), launcher.isWindowLoaded);
         for (NSUInteger i = 0; i < 8; i++)
             [launcher control:launcher.search textView:editor doCommandBySelector:@selector(moveDown:)];
         NSCAssert(launcher.table.selectedRow == 4, @"keyboard selection cannot reach a hidden sixth result");

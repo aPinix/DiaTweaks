@@ -1,4 +1,5 @@
 #import "../Shortcuts/Shortcut.h"
+#import "Patches/CommandBar/CommandBar.h"
 
 static EventHotKeyRef DPMiniHotkey;
 static EventHandlerRef DPMiniHotkeyHandler;
@@ -50,7 +51,8 @@ void DPBrowsePauseHotkey(BOOL paused) { DPMiniHotkeyPaused = paused; DPBrowseUpd
 
 BOOL DPMiniSaveShortcut(DPMiniShortcut *shortcut, BOOL reset, NSString **error) {
     if (error) *error = nil;
-    NSString *problem = shortcut ? DPMiniShortcutMenuConflict(shortcut, NSApp.mainMenu) : @"Include Command, Control or Option with a key.";
+    NSString *problem = shortcut ? DPCommandBarMiniShortcutConflict(shortcut) ?: DPMiniShortcutMenuConflict(shortcut, NSApp.mainMenu)
+        : @"Include Command, Control or Option with a key.";
     if (problem) { if (error) *error = problem; return NO; }
     EventHotKeyRef replacement = NULL;
     if (DPDiaMini.on && ![DPRegisteredShortcut sameKey:shortcut]) {

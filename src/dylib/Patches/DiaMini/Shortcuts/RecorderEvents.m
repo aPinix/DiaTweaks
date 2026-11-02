@@ -21,7 +21,7 @@
     if (event.type == NSEventTypeKeyUp && self.pending && event.keyCode == self.pending.keyCode) {
         // Register after release so recording the shortcut cannot also open Mini.
         NSString *error = nil;
-        if (DPMiniSaveShortcut(self.pending, NO, &error)) { self.message = nil; [self stopRecording]; }
+        if ([self saveShortcut:self.pending reset:NO error:&error]) { self.message = nil; [self stopRecording]; }
         else { self.pending = nil; self.message = error; [self refresh]; }
         return YES;
     }

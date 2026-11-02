@@ -1,46 +1,45 @@
-#import "Launcher.h"
+#import "../Search/Provider.h"
 
 DPMiniLauncher *DPCurrentMiniLauncher;
 
 @implementation DPMiniLauncher
-- (void)show {
-    self.previousApplication = NSWorkspace.sharedWorkspace.frontmostApplication;
-    self.restorePrevious = YES;
-    self.source = DPBrowseFrontSource();
-    self.suggestions = @[];
-    [self buildLauncher];
-    [self focus];
-    [self query];
-    if (self.source) return;
-    self.startingSource = YES;
-    self.status.stringValue = @"Starting Dia…";
-    DPBrowsePrepareSource();
-    __weak DPMiniLauncher *weak = self;
-    __block NSUInteger polls = 0;
-    self.sourceTimer = [NSTimer scheduledTimerWithTimeInterval:0.1 repeats:YES block:^(NSTimer *timer) {
-        DPMiniLauncher *launcher = weak;
-        if (!launcher) { [timer invalidate]; return; }
-        launcher.source = DPBrowseFrontSource();
-        if (!launcher.source && ++polls < 100) return;
-        [timer invalidate]; launcher.sourceTimer = nil; launcher.startingSource = NO;
-        if (launcher.source) { [launcher.window makeKeyAndOrderFront:nil]; [launcher query]; }
-        else launcher.status.stringValue = @"Open a Dia window to use its profile";
-    }];
-}
+- (BOOL)launcherEnabled { return DPDiaMini.on; }
 - (void)query {
+    if (self.openingResult) return;
     NSUInteger generation = ++self.generation;
-    NSString *text = self.search.stringValue;
+    NSString *text = [self prepareSiteSearchQuery];
+    if (self.siteProvider) {
+        DPSiteSearchProvider *provider = self.siteProvider;
+        __weak DPMiniLauncher *weak = self;
+        DPBrowseSiteSuggestions(self.source, provider, text, ^(NSArray *items) {
+            DPMiniLauncher *launcher = weak;
+            if (launcher && launcher.generation == generation && launcher.window.visible && !launcher.openingResult) [launcher setResults:items];
+        });
+        return;
+    }
     NSArray *cached = DPBrowseRecents(self.source);
     if (text.length) cached = [cached filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(DPBrowseSuggestion *item, NSDictionary *_) {
         return [item.title localizedCaseInsensitiveContainsString:text] || [item.url.absoluteString localizedCaseInsensitiveContainsString:text];
     }]];
+    DPBrowseSuggestion *completed = nil;
+    if (self.siteCandidate.homeURL && self.siteCompletion.length) {
+        completed = [DPBrowseSuggestion new]; completed.title = self.siteCandidate.name;
+        completed.url = self.siteCandidate.homeURL;
+        completed.icon = self.siteCandidate.icon;
+        completed.fillIntoEdit = self.siteCompletion;
+        completed.inlineAutocompleteText = [self.siteCompletion substringFromIndex:MIN(text.length, self.siteCompletion.length)];
+        completed.allowedToBeDefaultMatch = YES;
+        NSMutableArray *seed = [cached mutableCopy];
+        [seed removeObjectsAtIndexes:[seed indexesOfObjectsPassingTest:^BOOL(DPBrowseSuggestion *item, NSUInteger index, BOOL *stop) { return [item.url isEqual:completed.url]; }]];
+        [seed insertObject:completed atIndex:0]; cached = seed;
+    }
     [self setResults:cached];
     if (!self.source) return;
     __weak DPMiniLauncher *weak = self;
-    DPBrowseSuggestions(self.source, text, ^(NSArray<DPBrowseSuggestion *> *native) {
+    DPBrowseInputSuggestions(self.source, text, [self shouldPreventInlineCompletion], ^(NSArray<DPBrowseSuggestion *> *native) {
         DPMiniLauncher *launcher = weak;
-        if (!launcher || launcher.generation != generation || !launcher.window.visible) return;
-        NSMutableArray *merged = [(text.length ? @[] : cached) mutableCopy];
+        if (!launcher || launcher.generation != generation || !launcher.window.visible || launcher.openingResult) return;
+        NSMutableArray *merged = [(text.length ? (completed ? @[completed] : @[]) : cached) mutableCopy];
         NSMutableSet *seen = [NSMutableSet new];
         for (DPBrowseSuggestion *item in merged) [seen addObject:item.url.absoluteString];
         for (DPBrowseSuggestion *item in native) if (![seen containsObject:item.url.absoluteString]) {
@@ -49,31 +48,35 @@ DPMiniLauncher *DPCurrentMiniLauncher;
         if (merged.count || !cached.count) [launcher setResults:merged];
     });
 }
-- (void)controlTextDidChange:(NSNotification *)note { [self query]; }
-- (BOOL)control:(NSControl *)control textView:(NSTextView *)textView doCommandBySelector:(SEL)selector {
-    if (selector == @selector(cancelOperation:)) { [self close]; return YES; }
-    if (selector == @selector(insertNewline:)) { [self choose:nil]; return YES; }
-    NSInteger row = self.table.selectedRow;
-    if (selector == @selector(moveDown:)) row = MIN((NSInteger)self.suggestions.count - 1, row + 1);
-    else if (selector == @selector(moveUp:)) row = MAX(0, row - 1);
-    else return NO;
-    if (row >= 0 && row < (NSInteger)self.suggestions.count) [self.table selectRowIndexes:[NSIndexSet indexSetWithIndex:row] byExtendingSelection:NO];
-    return YES;
+- (void)controlTextDidChange:(NSNotification *)note {
+    if (!self.updatingInput) { [self userInputDidChange]; [self query]; }
 }
 - (void)choose:(id)sender {
+    if (self.openingResult || !self.launcherEnabled) return;
     NSInteger row = self.table.selectedRow;
     DPBrowseSuggestion *item = row >= 0 && row < (NSInteger)self.suggestions.count ? self.suggestions[row] : nil;
-    NSURL *url = item.url ?: DPBrowseAddress(self.search.stringValue);
+    NSURL *url = item.url ?: (self.siteProvider ? [self.siteProvider URLForQuery:self.search.stringValue] : DPBrowseDefaultAddress(self.source, self.search.stringValue));
     if (!url || !self.source) { NSBeep(); return; }
     self.openingResult = YES;
+    NSString *title = item.title ?: self.search.stringValue;
+    NSString *keyword = self.siteProvider.keyword;
+    DPBrowseSource *source = self.source;
+    __weak DPMiniLauncher *weak = self;
+    [self openURL:url completion:^(BOOL opened) {
+        DPMiniLauncher *launcher = weak;
+        if (!opened) {
+            if (!launcher.launcherEnabled || !launcher.window.visible) return;
+            launcher.openingResult = NO; [launcher setResults:@[]];
+            launcher.status.stringValue = @"Open a Dia window and try again."; return;
+        }
+        if (keyword.length) DPBrowseRememberQuery(source, url, title, keyword);
+        else DPBrowseRemember(source, url, title);
+        [launcher close];
+    }];
+}
+- (void)openURL:(NSURL *)url completion:(void (^)(BOOL))completion {
     DPBrowseWindow *page = DPBrowseOpen(url, self.source, self.window.frame);
-    if (!page) {
-        self.openingResult = NO; [self setResults:@[]];
-        self.status.stringValue = @"Open a Dia window and try again."; return;
-    }
-    page.returnApplication = self.previousApplication;
-    DPBrowseRemember(self.source, url, item.title ?: self.search.stringValue);
-    [self close];
+    page.returnApplication = self.previousApplication; completion(page != nil);
 }
 - (void)windowDidResignKey:(NSNotification *)note {
     if (!self.openingResult && !self.startingSource && !self.presenting) { self.restorePrevious = NO; [self close]; }
@@ -90,13 +93,3 @@ DPMiniLauncher *DPCurrentMiniLauncher;
 }
 - (void)dealloc { [self.sourceTimer invalidate]; }
 @end
-
-void DPBrowseShowLauncher(void) {
-    if (!DPDiaMini.on) return;
-    if (DPCurrentMiniLauncher) {
-        [DPCurrentMiniLauncher focus];
-        [DPCurrentMiniLauncher.search selectText:nil]; return;
-    }
-    DPCurrentMiniLauncher = [DPMiniLauncher new]; [DPCurrentMiniLauncher show];
-}
-void DPBrowseCloseLauncher(void) { [DPCurrentMiniLauncher close]; }

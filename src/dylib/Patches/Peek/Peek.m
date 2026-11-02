@@ -1,5 +1,6 @@
 #import "Patches/Peek/Peek.h"
 #import "Patches/Peek/Indicator.h"
+#import "Patches/CommandBar/CommandBar.h"
 
 // Arc's Peek: Shift-click a link and it opens in a card over the page you're on, then becomes a tab or a split view
 // pane only if you expand or split it. Dispositions are ArcCore's own ArcWebContentsNavigationDisposition, numbered
@@ -8,6 +9,7 @@ enum { DPIgnoreAction = 0, DPCurrentTab = 1, DPForegroundTab = 2, DPBackgroundTa
 
 // ArcCore reports a Shift-click as a popup; new tabs and windows count too.
 static BOOL DPPeekWanted(NSInteger disposition, id page) {
+    if (DPCommandBarIsAdopting()) return NO;
     BOOL elsewhere = disposition == DPForegroundTab || disposition == DPBackgroundTab || disposition == DPPopup || disposition == DPNewWindow;
     NSEventModifierFlags mask = NSEventModifierFlagShift | NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagControl;
     BOOL held = (NSEvent.modifierFlags & mask) == NSEventModifierFlagShift;

@@ -85,3 +85,21 @@ A broad 32-point shadow extends outside the visible panel through a noninteracti
 - Static proof stays local: `build/proof/mini-launcher-before.png`, `build/proof/mini-launcher-sidebar-after.png`, `build/proof/mini-launcher-typed-after.png` and `build/proof/mini-launcher-top-after.png`. Review browsing history before attaching these ignored screenshots to a PR.
 
 The unchanged documentation gate still reports the same three missing upstream wiki pages and sidebar links. No patch key or upstream PR is added by this change.
+
+## Command Bar and shared site search
+
+Added an independent Command Bar patch with a default ⌘K binding and the same recorder/reset control as Mini. It opens regular foreground tabs in the source window/profile. Both launchers support Tab-to-site-search, provider badges, provider-specific recent queries and native keyword suggestions. YouTube uses a red badge and selection. A disabled provider stays disabled; unsupported native template macros are left to Chromium instead of becoming literal navigation URLs.
+
+Compared Command Bar and Little Arc directly in Arc 1.171.0. Both now use native suffix-completion metadata, preview normal keyboard selections in the input while preserving the original ranking query, retain scoped input while selecting queries, restore the site address on empty Backspace, and leave a scope for empty normal input on Escape before a second Escape dismisses. Deleting a selected suffix suppresses its immediate return. Fixtures cover input-method composition and asynchronous replacement of completed results.
+
+- `make` and the final `make test-quick-browse` pass without compiler warnings. Fixtures include scoped URL encoding/history, profile isolation, stale callbacks, input completion and deletion, shortcut persistence/conflicts, Mini/Command Bar mode changes, native ownership when adoption hides the palette, and stale/closed tab identity.
+- Installed with `./install.sh` in the existing `/Applications/Dia.app`, using its existing profile. The installed and built dylib digests match. Native Dia 1.56.0 (89901) passes all 36 scenarios in each layout with no failures, unavailable patches or safe mode. Reports: `build/test-sidebar-command-bar.json` (`vertical`) and `build/test-top-command-bar.json` (`horizontal`). All browser windows were saved in the target layout before the horizontal run because the upstream layout detector searches every window.
+- Native checks cover URL and ordinary-query navigation, YouTube scoped navigation, empty and populated source windows, and real rendered pages. “Switch to Tab” activates an inactive existing page without changing the tab count. Mini opens its query in a compact page, and scoped recent queries appear in both launchers after reopening and restarting Dia.
+- Recorded ⌘T in the actual shortcut control, restarted Dia, and confirmed the saved binding opens this Command Bar. Disabling the patch restored native ⌘T. Reset restored ⌘K. Command Bar also opened with Mini disabled. Mini’s default remains ⌥⌘N.
+- Local proof: `build/proof/command-bar-initial-flow.mp4`, `build/proof/horizontal-command-bar.mp4`, `build/proof/command-bar-site-search-after.png`, `build/proof/command-bar-shortcut-custom.png` and `build/proof/mini-site-search-final.png`. Videos use silent H.264 at 1120×700 and 60 fps. Media stays ignored and local; review browsing history before attaching it to a PR.
+
+The disposable test windows were removed. Sidebar tabs and the original auto-hide setting were restored and saved, and Dia was reopened normally. No upstream PR was submitted.
+
+This reconstructs the observed navigation/input flow, not every Arc command or ranking rule. Suggestions use Dia’s profile and autocomplete. Switching covers tracked, initialized web tabs in the current window/profile, excluding dormant session-only tabs, Mini and Peek. Private-window and second-profile coverage remains a native manual check; fixtures enforce source isolation.
+
+The unchanged upstream documentation checker now reports four missing maintainer wiki pages and sidebar links: Peek, Dia Mini, Open external links in Dia Mini, and Command Bar. Local notes and proof do not bypass that gate.

@@ -78,6 +78,6 @@ void DPInstallQuickBrowse(void) {
             DPBrowseInstallExternal();
             DPBrowseUpdateHotkey();
         });
-        DPOnQuit(^{ DPBrowseStopHotkey(); DPBrowseCloseLauncher(); for (DPBrowseWindow *preview in DPBrowseWindows.copy) [preview close]; });
+        DPOnQuit(^{ DPBrowseStopHotkey(); [DPCurrentMiniLauncher close]; for (DPBrowseWindow *preview in DPBrowseWindows.copy) [preview close]; });
     });
 }

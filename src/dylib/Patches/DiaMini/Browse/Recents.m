@@ -2,6 +2,7 @@
 #import <objc/message.h>
 
 @implementation DPBrowseSuggestion
+- (NSString *)actionLabel { return nil; }
 @end
 
 id DPBrowseContext(DPBrowseSource *source) {
@@ -22,7 +23,7 @@ NSArray<DPBrowseSuggestion *> *DPBrowseRecents(DPBrowseSource *source) {
     id context = source.browser;
     return context ? [[DPMiniRecentByContext() objectForKey:context] copy] ?: @[] : @[];
 }
-void DPBrowseRemember(DPBrowseSource *source, NSURL *url, NSString *title) {
+static void DPBrowseStore(DPBrowseSource *source, NSURL *url, NSString *title, NSString *keyword) {
     id context = source.browser;
     if (!context || !DPBrowseURL(url)) return;
     NSMutableArray<DPBrowseSuggestion *> *items = [DPBrowseRecents(source) mutableCopy];
@@ -32,7 +33,12 @@ void DPBrowseRemember(DPBrowseSource *source, NSURL *url, NSString *title) {
     [items removeObjectsAtIndexes:same];
     DPBrowseSuggestion *item = [DPBrowseSuggestion new]; item.url = url;
     item.title = title.length ? title : url.host;
+    item.searchQuery = keyword.length != 0; item.keyword = keyword;
     [items insertObject:item atIndex:0];
     while (items.count > 8) [items removeLastObject];
     [DPMiniRecentByContext() setObject:items forKey:context];
+}
+void DPBrowseRemember(DPBrowseSource *source, NSURL *url, NSString *title) { DPBrowseStore(source, url, title, nil); }
+void DPBrowseRememberQuery(DPBrowseSource *source, NSURL *url, NSString *query, NSString *keyword) {
+    DPBrowseStore(source, url, query, keyword);
 }

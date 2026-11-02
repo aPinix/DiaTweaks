@@ -7,6 +7,8 @@
 
 void DPTestPeekOrigin(DPPeekCard *peek);
 void DPTestMiniLauncherLayout(DPMiniLauncher *launcher);
+void DPTestSiteSearch(DPBrowseSource *source);
+void DPTestCommandBar(DPBrowseSource *source);
 
 DPPatch DPDiaMini = {.on = YES};
 DPPatch DPDiaMiniExternal;
@@ -294,11 +296,11 @@ int main(void) {
         NSPoint clicked=NSMakePoint(147,523);
         DPPeekRememberClick(window,NSEventModifierFlagShift,clicked);
         NSCAssert([delegate webContents:sourcePage decidePolicyForNavigationAction:action]==0,@"remember Shift after the input event ends");
-        drain(0.02);
+        drainUntil(^BOOL{ return DPPeekCardIn(window) != nil; });
         NSCAssert(DPPeekCardIn(window),@"remembered click opens the preview");
         NSCAssert(NSEqualPoints(DPPeekCardIn(window).clickPointInWindow,clicked),@"navigation uses the original mouse-down location, not the later pointer position");
         NSCAssert(!DPPeekHasRecentClick(window),@"a navigation consumes its remembered click");
-        [DPPeekCardIn(window) close:0]; drain(0.25);
+        [DPPeekCardIn(window) close:0]; drainUntil(^BOOL{ return DPPeekCardIn(window) == nil; });
         DPPeekRememberClick(window,NSEventModifierFlagShift|NSEventModifierFlagCommand,clicked);
         NSCAssert([delegate webContents:sourcePage decidePolicyForNavigationAction:action]==1,@"Command-Shift is left to Dia");
         action.url=[NSURL URLWithString:@"mailto:test@example.com"];
@@ -419,7 +421,7 @@ int main(void) {
         NSCAssert([recede.toValue isEqual:seed],@"closing returns to the same point and scale used by opening");
         NSCAssert([recede.fromValue isEqual:seed],@"closing before the first display tick does not jump to full size");
         drain(0.10); NSCAssert(peek.superview,@"the live page remains attached during the close transition");
-        drain(0.20);
+        drainUntil(^BOOL{ return peek.superview == nil; });
         NSCAssert(peek.controls.alphaValue==0 && !peek.superview,@"late opening callback cannot resurrect controls");
 
         NSRect tab=NSMakeRect(10,20,300,37), pin=NSMakeRect(10,20,64,41);
@@ -434,7 +436,7 @@ int main(void) {
         DPPeekOpen(window,url,NSMakePoint(500,500),delegate,sourcePage);
         NSView *badge=DPFindView(window.contentView,^BOOL(NSView *v){ return [v.accessibilityLabel isEqual:@"Peek open"]; });
         NSCAssert(badge && NSMaxX(badge.frame)>NSMaxX(favorite.frame),@"favorite badge overlaps the tile edge");
-        [DPPeekCardIn(window) close:0]; drain(0.25);
+        [DPPeekCardIn(window) close:0]; drainUntil(^BOOL{ return DPPeekCardIn(window) == nil; });
 
         reduceMotion=YES;
         DPPeekOpen(window,url,NSMakePoint(500,500),delegate,sourcePage);
@@ -447,8 +449,12 @@ int main(void) {
         NSCAssert(DPPeekCardIn(window) && !DPBrowseWindows.count && DPNewMiniItem.hidden,@"Mini switch leaves Peek open");
         [peek close:0]; drain(0.15);
         NSCAssert(!DPPeekCardIn(window),@"reduced-motion cleanup");
+        extern void DPTestInputBehavior(DPBrowseSource *source);
+        DPTestInputBehavior(source);
+        DPTestSiteSearch(source);
+        DPTestCommandBar(source);
         [window close];
         [NSUserDefaults.standardUserDefaults removePersistentDomainForName:shortcutDomain];
-        puts("PASS: Mini launcher, profile history, query ordering, external-link preference and handoff; Peek motion, interruption, badges and Reduce Motion");
+        puts("PASS: Mini, scoped site search, configurable Command Bar and native tab handoff; Peek motion, badges and Reduce Motion");
     }
 }

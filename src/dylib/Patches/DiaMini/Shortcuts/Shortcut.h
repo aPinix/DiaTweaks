@@ -35,6 +35,15 @@ void DPBrowseInstallShortcutSettings(void);
 - (void)resetShortcut:(id)sender;
 - (void)refresh;
 @end
+@interface DPMiniShortcutRecorder (Binding)
+- (DPMiniShortcut *)currentShortcut;
+- (DPMiniShortcut *)defaultShortcut;
+- (BOOL)saveShortcut:(DPMiniShortcut *)shortcut reset:(BOOL)reset error:(NSString **)error;
+- (void)pauseShortcut:(BOOL)paused;
+- (NSNotificationName)shortcutNotificationName;
+- (NSString *)shortcutRegistrationError;
+- (BOOL)shortcutUnavailable;
+@end
 @interface DPMiniShortcutRecorder (Events)
 - (BOOL)consumeEvent:(NSEvent *)event;
 @end

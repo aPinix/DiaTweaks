@@ -1,5 +1,8 @@
-#import "Launcher.h"
+#import "../Search/Provider.h"
 #import <objc/message.h>
+
+static void DPBrowseAutocomplete(DPBrowseSource *source, NSString *text, NSString *keyword, BOOL preventInline,
+    void (^completion)(NSArray<DPBrowseSuggestion *> *));
 
 static id DPCompletionValue(id object, SEL selector) {
     id (*get)(id, SEL) = (void *)objc_msgSend;
@@ -24,6 +27,17 @@ NSArray<DPBrowseSuggestion *> *DPBrowseMatches(id result) {
         if ([match respondsToSelector:@selector(swapContentsAndDescription)] && flag(match, @selector(swapContentsAndDescription))
             && [detail isKindOfClass:NSString.class] && [detail length]) title = detail;
         item.title = [title isKindOfClass:NSString.class] && [title length] ? title : url.host;
+        id keyword = DPCompletionValue(match, @selector(keyword));
+        item.keyword = [keyword isKindOfClass:NSString.class] ? keyword : nil;
+        id type = DPCompletionValue(match, @selector(matchType));
+        item.searchQuery = [type isKindOfClass:NSString.class] && [type rangeOfString:@"search" options:NSCaseInsensitiveSearch].location != NSNotFound;
+        item.fromKeyword = [match respondsToSelector:@selector(isFromKeyword)] && flag(match, @selector(isFromKeyword));
+        item.searchQuery |= item.fromKeyword;
+        id inlineText = DPCompletionValue(match, @selector(inlineAutocompleteText)), fill = DPCompletionValue(match, @selector(fillIntoEdit));
+        item.inlineAutocompleteText = [inlineText isKindOfClass:NSString.class] ? inlineText : nil;
+        item.fillIntoEdit = [fill isKindOfClass:NSString.class] ? fill : nil;
+        item.allowedToBeDefaultMatch = [match respondsToSelector:@selector(allowedToBeDefaultMatch)] && flag(match, @selector(allowedToBeDefaultMatch));
+        item.hasTabMatch = [match respondsToSelector:@selector(hasTabMatch)] && flag(match, @selector(hasTabMatch));
         [items addObject:item];
         if (items.count == 6) break;
     }
@@ -47,7 +61,20 @@ static BOOL DPBrowseHistory(DPBrowseSource *source, NSString *text, void (^compl
 }
 
 void DPBrowseSuggestions(DPBrowseSource *source, NSString *text, void (^completion)(NSArray<DPBrowseSuggestion *> *)) {
-    if (!text.length && DPBrowseHistory(source,text,completion)) return;
+    DPBrowseInputSuggestions(source, text, NO, completion);
+}
+void DPBrowseInputSuggestions(DPBrowseSource *source, NSString *text, BOOL preventInlineCompletion, void (^completion)(NSArray<DPBrowseSuggestion *> *)) {
+    DPBrowseAutocomplete(source, text, @"", preventInlineCompletion, completion);
+}
+void DPBrowseHistorySuggestions(DPBrowseSource *source, NSString *text, void (^completion)(NSArray<DPBrowseSuggestion *> *)) {
+    if (!DPBrowseHistory(source, text, completion)) completion(@[]);
+}
+void DPBrowseKeywordSuggestions(DPBrowseSource *source, NSString *text, NSString *keyword, void (^completion)(NSArray<DPBrowseSuggestion *> *)) {
+    DPBrowseAutocomplete(source, text, keyword, YES, completion);
+}
+static void DPBrowseAutocomplete(DPBrowseSource *source, NSString *text, NSString *keyword, BOOL preventInline,
+    void (^completion)(NSArray<DPBrowseSuggestion *> *)) {
+    if (!text.length && !keyword.length && DPBrowseHistory(source,text,completion)) return;
     id owner = DPBrowseAutocompleteOwner(source);
     SEL selector = @selector(autocomplete:cursorPosition:preventInlineAutocomplete:startFresh:keyword:error:completion:);
     if (![owner respondsToSelector:selector]) {
@@ -56,7 +83,7 @@ void DPBrowseSuggestions(DPBrowseSource *source, NSString *text, void (^completi
     }
     BOOL (*query)(id, SEL, NSString *, int, BOOL, BOOL, NSString *, NSError **, void (^)(id)) = (void *)objc_msgSend;
     NSError *error;
-    BOOL started = query(owner, selector, text, (int)MIN(text.length, INT_MAX), YES, text.length == 0, nil, &error, ^(id result) {
+    BOOL started = query(owner, selector, text, (int)MIN(text.length, INT_MAX), preventInline, text.length == 0, keyword, &error, ^(id result) {
         NSArray *items = DPBrowseMatches(result);
         dispatch_async(dispatch_get_main_queue(), ^{ completion(items); });
     });

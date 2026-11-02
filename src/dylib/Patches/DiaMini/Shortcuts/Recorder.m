@@ -11,24 +11,24 @@ static __weak DPMiniShortcutRecorder *DPRecordingShortcut;
     self.target = self; self.action = @selector(startRecording);
     self.toolTip = @"Click to record a shortcut. Escape cancels.";
     __weak DPMiniShortcutRecorder *weak = self;
-    self.shortcutObserver = [NSNotificationCenter.defaultCenter addObserverForName:DPMiniShortcutDidChangeNotification object:nil queue:nil
+    self.shortcutObserver = [NSNotificationCenter.defaultCenter addObserverForName:self.shortcutNotificationName object:nil queue:nil
         usingBlock:^(NSNotification *note) { [weak refresh]; }];
     [self refresh];
     return self;
 }
 - (BOOL)acceptsFirstResponder { return YES; }
 - (void)refresh {
-    self.title = self.recording ? @"Press shortcut…" : DPMiniShortcut.current.label;
+    self.title = self.recording ? @"Press shortcut…" : self.currentShortcut.label;
     self.accessibilityValue = self.title;
-    self.enabled = !DPDiaMini.unavailable;
-    self.hint.stringValue = self.message ?: (self.recording ? @"Press a shortcut. Escape cancels." : DPBrowseHotkeyError() ?: @"Click to change. Include Command, Control or Option.");
+    self.enabled = !self.shortcutUnavailable;
+    self.hint.stringValue = self.message ?: (self.recording ? @"Press a shortcut. Escape cancels." : self.shortcutRegistrationError ?: @"Click to change. Include Command, Control or Option.");
     self.hint.textColor = self.message ? NSColor.systemRedColor : NSColor.secondaryLabelColor;
 }
 - (void)startRecording {
     if (!self.window) return;
     [DPRecordingShortcut stopRecording];
     DPRecordingShortcut = self; self.recording = YES; self.message = nil;
-    DPBrowsePauseHotkey(YES);
+    [self pauseShortcut:YES];
     [self.window makeFirstResponder:self];
     __weak DPMiniShortcutRecorder *weak = self;
     self.monitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown | NSEventMaskKeyUp | NSEventMaskLeftMouseDown | NSEventMaskRightMouseDown
@@ -44,13 +44,13 @@ static __weak DPMiniShortcutRecorder *DPRecordingShortcut;
     if (self.windowObserver) [NSNotificationCenter.defaultCenter removeObserver:self.windowObserver];
     self.monitor = self.windowObserver = nil;
     DPRecordingShortcut = nil;
-    DPBrowsePauseHotkey(NO);
+    [self pauseShortcut:NO];
     [self refresh];
 }
 - (void)resetShortcut:(id)sender {
     [self stopRecording];
     NSString *error = nil;
-    DPMiniSaveShortcut(DPMiniShortcut.defaultShortcut, YES, &error);
+    [self saveShortcut:self.defaultShortcut reset:YES error:&error];
     self.message = error; [self refresh];
 }
 - (void)viewDidMoveToWindow { [super viewDidMoveToWindow]; if (!self.window) [self stopRecording]; }
@@ -58,6 +58,6 @@ static __weak DPMiniShortcutRecorder *DPRecordingShortcut;
     if (self.monitor) [NSEvent removeMonitor:self.monitor];
     for (id observer in @[self.windowObserver ?: NSNull.null, self.shortcutObserver ?: NSNull.null])
         if (observer != NSNull.null) [NSNotificationCenter.defaultCenter removeObserver:observer];
-    if (self.recording) DPBrowsePauseHotkey(NO);
+    if (self.recording) [self pauseShortcut:NO];
 }
 @end
