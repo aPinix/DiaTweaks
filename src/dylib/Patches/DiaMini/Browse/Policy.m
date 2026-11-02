@@ -29,14 +29,14 @@ NSURL *DPBrowseAddress(NSString *text) {
 }
 
 NSRect DPBrowseFrame(NSRect parent, NSRect screen) {
-    NSRect available = screen;
-    CGFloat margin = MIN(24, MIN(available.size.width, available.size.height) / 12);
-    CGFloat width = MIN(760, MAX(1, available.size.width - margin * 2));
-    CGFloat height = MIN(560, MAX(1, available.size.height - margin * 2));
+    CGFloat margin = MIN(24, MIN(NSWidth(screen), NSHeight(screen)) / 12);
+    NSRect available = NSInsetRect(screen, margin, margin);
+    CGFloat width = MIN(1280, MAX(1, NSWidth(available)));
+    CGFloat height = MIN(950, MAX(1, NSHeight(available)));
     CGFloat x = NSMidX(parent) - width / 2;
     CGFloat y = NSMidY(parent) - height / 2;
-    return NSMakeRect(MAX(NSMinX(screen), MIN(x, NSMaxX(screen) - width)),
-                      MAX(NSMinY(screen), MIN(y, NSMaxY(screen) - height)), width, height);
+    return NSMakeRect(MAX(NSMinX(available), MIN(x, NSMaxX(available) - width)),
+                      MAX(NSMinY(available), MIN(y, NSMaxY(available) - height)), width, height);
 }
 
 NSRect DPBrowseLauncherFrame(NSRect screen, CGFloat height) {

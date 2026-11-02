@@ -1,4 +1,5 @@
 #import "../Search/Provider.h"
+#import "WindowCommand.h"
 
 @implementation DPMiniLauncher (Presentation)
 - (void)show {
@@ -26,7 +27,7 @@
 
 void DPBrowseShowLauncher(void) {
     if (!DPDiaMini.on) return;
-    if (DPCurrentMiniLauncher && !DPCurrentMiniLauncher.commandBar) {
+    if (DPCurrentMiniLauncher && !DPCurrentMiniLauncher.commandBar && ![DPCurrentMiniLauncher isKindOfClass:DPMiniWindowCommand.class]) {
         [DPCurrentMiniLauncher focus]; [DPCurrentMiniLauncher.search selectText:nil]; return;
     }
     DPMiniLauncher *previous = DPCurrentMiniLauncher, *launcher = [DPMiniLauncher new];

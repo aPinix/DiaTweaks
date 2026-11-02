@@ -1,19 +1,23 @@
 #import "QuickBrowse.h"
+#import "BrowserToolbar.h"
 #import <objc/message.h>
 
 @implementation DPBrowseWindow
 
 - (BOOL)startWithURL:(NSURL *)url source:(DPBrowseSource *)source {
     self.source = source;
+    self.profileContext = DPBrowseContext(source);
     NSScreen *screen = source.window.screen ?: NSScreen.mainScreen;
     NSRect anchor = NSIsEmptyRect(self.launcherFrame) ? source.window.frame : self.launcherFrame;
     if (!NSIsEmptyRect(self.launcherFrame)) for (NSScreen *candidate in NSScreen.screens)
         if (NSIntersectsRect(candidate.frame, self.launcherFrame)) { screen = candidate; break; }
     NSRect frame = DPBrowseFrame(anchor, screen.visibleFrame);
     NSWindowStyleMask style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
-    NSWindow *panel = [[NSWindow alloc] initWithContentRect:frame styleMask:style backing:NSBackingStoreBuffered defer:NO];
+    NSRect content = [NSWindow contentRectForFrameRect:frame styleMask:style];
+    NSWindow *panel = [[NSWindow alloc] initWithContentRect:content styleMask:style backing:NSBackingStoreBuffered defer:NO];
     panel.releasedWhenClosed = NO; panel.tabbingMode = NSWindowTabbingModeDisallowed;
-    panel.contentMinSize = NSMakeSize(MIN(440, screen.visibleFrame.size.width), MIN(220, screen.visibleFrame.size.height));
+    panel.contentMinSize = NSMakeSize(MIN(440, NSWidth(frame)), MIN(220, MAX(1, NSHeight(frame) - 60)));
+    panel.appearance = source.window.effectiveAppearance ?: NSApp.effectiveAppearance;
     panel.title = @"Dia Mini";
     panel.identifier = @"DiaTweaks.DiaMini";
     panel.delegate = self;
@@ -30,7 +34,8 @@
     self.host = [self.contents createPaneHostView];
     if (!self.host) { [self.contents close]; self.contents = nil; return NO; }
     [self buildChrome];
-    if (url) self.address.stringValue = url.absoluteString;
+    [panel setFrame:frame display:NO];
+    if (url) [self prepareNavigationToURL:url];
     [self.contents attachToPaneHostView:self.host];
     [panel makeKeyAndOrderFront:nil];
     if (url) [panel makeFirstResponder:self.contents.nativeView];
@@ -39,7 +44,8 @@
     if (url) {
         id (*load)(id, SEL, id, id) = (void *)objc_msgSend;
         load(self.contents.navigationController, @selector(load:initiatorOrigin:), url, nil);
-    } else [panel makeFirstResponder:self.address];
+    } else [panel makeFirstResponder:self.host];
+    [self updatePage];
     __weak DPBrowseWindow *weakSelf = self;
     self.refresh = [NSTimer scheduledTimerWithTimeInterval:0.25 repeats:YES block:^(NSTimer *_) { [weakSelf updatePage]; }];
     return YES;
@@ -50,6 +56,8 @@
 - (void)windowWillClose:(NSNotification *)note {
     if (self.closing) return;
     self.closing = YES;
+    if (self.promoting && DPBrowseMiniPageAdopted(self)) self.transferred = YES;
+    [self.destinationPopover close]; self.destinationPopover = nil;
     BOOL restore = !self.transferred && self.window.isKeyWindow;
     [self.refresh invalidate]; self.refresh = nil;
     [NSNotificationCenter.defaultCenter removeObserver:self];
@@ -59,7 +67,7 @@
         [self.contents detachFromPaneHostView:self.host];
         [self.contents close];
     }
-    self.contents = nil; self.contentsDelegate = nil;
+    self.contents = nil; self.contentsDelegate = nil; self.profileContext = nil;
     [DPBrowseWindows removeObject:self];
     DPBrowseReleaseSource();
     if (restore && self.returnApplication.processIdentifier != NSRunningApplication.currentApplication.processIdentifier)

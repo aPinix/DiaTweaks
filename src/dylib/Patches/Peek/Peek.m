@@ -9,7 +9,7 @@ enum { DPIgnoreAction = 0, DPCurrentTab = 1, DPForegroundTab = 2, DPBackgroundTa
 
 // ArcCore reports a Shift-click as a popup; new tabs and windows count too.
 static BOOL DPPeekWanted(NSInteger disposition, id page) {
-    if (DPCommandBarIsAdopting()) return NO;
+    if (DPCommandBarIsAdopting() || DPBrowseIsPromoting()) return NO;
     BOOL elsewhere = disposition == DPForegroundTab || disposition == DPBackgroundTab || disposition == DPPopup || disposition == DPNewWindow;
     NSEventModifierFlags mask = NSEventModifierFlagShift | NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagControl;
     BOOL held = (NSEvent.modifierFlags & mask) == NSEventModifierFlagShift;

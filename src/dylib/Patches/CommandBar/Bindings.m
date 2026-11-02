@@ -1,4 +1,5 @@
 #import "CommandBar.h"
+#import "Patches/DiaMini/Browse/WindowCommand.h"
 
 NSMenuItem *DPCommandBarItem;
 static NSMapTable<NSMenuItem *, NSDictionary *> *DPCommandNativeBindings;
@@ -14,17 +15,20 @@ static BOOL DPCommandMatches(NSMenuItem *item, DPMiniShortcut *shortcut) {
     if (![item.keyEquivalent isEqual:item.keyEquivalent.lowercaseString]) flags |= NSEventModifierFlagShift;
     return item.keyEquivalent.length && flags == shortcut.modifiers && [item.keyEquivalent.lowercaseString isEqual:shortcut.characters];
 }
-NSString *DPCommandBarShortcutConflict(DPMiniShortcut *shortcut, NSMenu *menu) {
-    if (!shortcut) return @"Include Command, Control or Option with a key.";
-    if ([DPMiniShortcut.current sameKey:shortcut]) return @"Already used by Dia Mini. Choose another shortcut.";
+static NSString *DPCommandMenuConflict(DPMiniShortcut *shortcut, NSMenu *menu) {
     for (NSMenuItem *item in menu.itemArray) {
         if (item == DPCommandBarItem || item.hidden) continue;
         if (DPCommandMatches(item, shortcut) && !DPCommandMayTakeOver(shortcut))
             return [NSString stringWithFormat:@"Already used by “%@” in Dia. Choose another shortcut.", item.title];
-        NSString *nested = item.submenu ? DPCommandBarShortcutConflict(shortcut, item.submenu) : nil;
+        NSString *nested = item.submenu ? DPCommandMenuConflict(shortcut, item.submenu) : nil;
         if (nested) return nested;
     }
     return nil;
+}
+NSString *DPCommandBarShortcutConflict(DPMiniShortcut *shortcut, NSMenu *menu) {
+    if (!shortcut) return @"Include Command, Control or Option with a key.";
+    if ([DPMiniShortcut.current sameKey:shortcut]) return @"Already used by Dia Mini. Choose another shortcut.";
+    return DPCommandMenuConflict(shortcut, menu) ?: DPBrowseReservedMiniShortcut(shortcut);
 }
 void DPCommandBarRestoreBindings(void) {
     for (NSMenuItem *item in DPCommandNativeBindings.keyEnumerator.allObjects) {

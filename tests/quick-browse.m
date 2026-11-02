@@ -11,6 +11,8 @@ void DPTestPeekReady(NSWindow *window);
 void DPTestMiniLauncherLayout(DPMiniLauncher *launcher);
 void DPTestSiteSearch(DPBrowseSource *source);
 void DPTestCommandBar(DPBrowseSource *source);
+void DPTestMiniBrowserChrome(DPBrowseSource *source);
+void DPTestMiniWindowCommand(DPBrowseSource *source);
 
 DPPatch DPDiaMini = {.on = YES};
 DPPatch DPDiaMiniExternal;
@@ -457,6 +459,10 @@ int main(void) {
         DPTestInputBehavior(source);
         DPTestSiteSearch(source);
         DPTestCommandBar(source);
+        DPDiaMini.on = YES; DPBrowseApply(&DPDiaMini);
+        DPTestMiniBrowserChrome(source);
+        DPDiaMini.on = NO; DPBrowseApply(&DPDiaMini);
+        DPTestMiniWindowCommand(source);
         [window close];
         [NSUserDefaults.standardUserDefaults removePersistentDomainForName:shortcutDomain];
         puts("PASS: Mini, scoped site search, configurable Command Bar and native tab handoff; Peek motion, badges and Reduce Motion");

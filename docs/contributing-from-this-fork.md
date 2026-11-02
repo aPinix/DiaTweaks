@@ -8,7 +8,7 @@ Open one PR per change. Keep Peek improvements separate from Dia Mini. Peek buil
 
 Feature implementations belong in their folders under `src/dylib/Patches/`: Peek, DiaMini and CommandBar. Dia class names belong in `StdPatch/Dia.h`. Use StdPatch hooks and registration, live apply callbacks, class availability checks and view-based verification. Keep implementation files around 100 lines.
 
-Command Bar reuses Mini's launcher and shortcut recorder, and both use the same site-search support. Land that shared support first, or target a feature branch containing it, when preparing separate upstream PRs. The small Peek guard prevents a programmatic Command Bar tab handoff from being mistaken for a Shift-click preview.
+Command Bar reuses Mini's launcher and shortcut recorder, and both use the same site-search support. Land that shared support first, or target a feature branch containing it, when preparing separate upstream PRs. The small Peek guard prevents programmatic Command Bar and Mini tab handoffs from being mistaken for Shift-click previews.
 
 The fork's release URLs, install README and Settings links to local feature docs are distribution changes. Exclude those from an upstream feature PR. The Carbon link dependency belongs with Dia Mini's global shortcut, not a Peek PR.
 

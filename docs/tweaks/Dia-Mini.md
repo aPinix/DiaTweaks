@@ -14,20 +14,23 @@ Enable **Settings → Patches → Browsing → Dia Mini**, or `diatweaks enable 
 - In site search, Escape returns to an empty normal input. Another Escape, or a click outside, dismisses the search box. Closing it leaves the page you were working on in place.
 - Right-click a web link and select **Open Link in Dia Mini**.
 - The separate **[Open external links in Dia Mini](Open-external-links-in-Dia-Mini.md)** option opens links from other apps in Mini first. Dia must be your chosen browser for that link. It does not change clicks inside webpages.
-- Enter a web address or search in the address field. ⌘L selects it.
-- Use Back, Forward and Reload, or **Open in Dia** (⌘Return) to keep the existing page as a normal tab.
+- The browser has one compact toolbar with native window controls, a centered domain and loading indicator, a copy-link button and **Open in Dia**. Its initial frame is 1280×950, reduced to fit the screen.
+- Click the address pill or press ⌘L to edit the full URL in a centered Command Bar. ⌘T opens it with an empty input. Return loads the result in the same Mini window, including site searches.
+- With Command Bar enabled, its configured shortcut (⌘K by default) and **File → Command Bar** also open inside the active Mini. The global ⌥⌘N launcher still creates a new Mini.
+- Use ⌘[ / ⌘] for Back / Forward and ⌘R for Reload. **Open in Dia**, ⌘O or ⌘Return moves the live page into a normal tab. The arrow beside the button opens a searchable list of available Dia windows in the same profile.
+- Escape or ⌘W first closes an open Command Bar; the Mini remains. In site search, Escape first leaves the search scope. With the bar closed, Escape or ⌘W closes Mini.
 - Escape or the close button closes the temporary window. Turning Dia Mini off closes its windows and removes its File menu command.
 
 Mini and Peek have independent switches. Mini is a separate, resizable window, rather than a child overlay.
 
 ## Limits
 
-This is experimental and depends on Dia’s private native APIs. It is a compact browsing surface, without Dia’s Chat, sidebar or extension toolbar. Use **Open in Dia** for those features and website permission dialogs.
+This is experimental and depends on Dia’s private native APIs. It is a compact browsing surface, without Dia’s Chat, sidebar or extension toolbar. Dia’s extension actions target tracked browser tabs, so a misleading Mini extension button is omitted. Use **Open in Dia** for those features and website permission dialogs. The destination picker lists Dia windows; Arc’s Spaces have no equivalent here.
 
 Dia must be running for its global shortcut to work. The recorder rejects conflicting Dia menu shortcuts and reports global registration failures without saving the rejected choice. macOS may intercept reserved system shortcuts before they reach the recorder. The File menu command remains available. With no browser window available, Mini asks Dia to prepare a temporary background source window. The source is removed when no Mini needs it, unless you promote a page into it.
 
-Mini uses the current source profile, including its private browsing context; it does not choose profiles for you. Native history supplies recents; Mini’s additional fallback list stays in memory and is scoped to its source factory. Keep the source tab available when moving a Mini page into a regular tab.
+Mini uses the current source profile, including its private browsing context; it does not choose profiles for you. Native history supplies recents; Mini’s additional fallback list stays in memory and is scoped to its source factory. An existing Mini can keep navigating after its source window closes. Moving it into a regular tab requires an available destination window in that profile; a rejected handoff restores the same page to Mini.
 
 ## Verification
 
-Run `make test-quick-browse` for the AppKit fixtures. In real Dia, check the shortcut from another app, recent results, fast typing, ↑/↓, Enter and Escape. Also check a bare domain, a full URL, a search, Back/Forward, Reload, ⌘L, **Open in Dia**, and external links with their option on and off. Check both tab layouts, private browsing and a second profile. Disable Mini while Peek is open and confirm Peek still works.
+Run `make test-quick-browse` for the AppKit fixtures. In real Dia, check the global shortcut, completion, arrows, site search, ⌘L/⌘T/⌘K and same-window navigation. Resize Mini, test the destination picker and live-page handoff, close the source window, and check Escape / ⌘W dismiss the bar before the owner. Check both tab layouts, on/off states and external links. Disable Mini while Peek is open and confirm Peek still works.

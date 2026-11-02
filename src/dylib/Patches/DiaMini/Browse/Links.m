@@ -1,4 +1,5 @@
 #import "QuickBrowse.h"
+#import "WindowCommand.h"
 #import <objc/message.h>
 
 static BOOL DPBrowse_context(id self, SEL _cmd, id contents, NSMenu *menu, id element) {
@@ -20,15 +21,6 @@ void DPBrowseInstallDelegateHooks(Class cls) {
 void DPBrowseInstallEvents(void) {
     [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown
         handler:^NSEvent *(NSEvent *event) {
-            for (DPBrowseWindow *preview in DPBrowseWindows.copy) {
-                if (preview.window != event.window || event.type != NSEventTypeKeyDown) continue;
-                NSEventModifierFlags mods = event.modifierFlags & NSEventModifierFlagDeviceIndependentFlagsMask;
-                if (event.keyCode == 53 && !mods) { [preview close]; return nil; }
-                if ((mods & NSEventModifierFlagCommand) && [event.charactersIgnoringModifiers.lowercaseString isEqual:@"l"]) {
-                    [preview.window makeFirstResponder:preview.address]; [preview.address selectText:nil]; return nil;
-                }
-                if ((mods & NSEventModifierFlagCommand) && event.keyCode == 36) { [preview promote:nil]; return nil; }
-            }
-            return event;
+            return DPBrowseHandleMiniKeyEvent(event) ? nil : event;
         }];
 }

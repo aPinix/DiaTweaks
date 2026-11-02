@@ -1,5 +1,6 @@
 #import "CommandBar.h"
 #import "OpenTabs.h"
+#import "Patches/DiaMini/Browse/WindowCommand.h"
 
 @implementation DPCommandBarLauncher
 - (BOOL)launcherEnabled { return DPCommandBar.on && !DPCommandBar.unavailable; }
@@ -29,6 +30,8 @@
 
 void DPCommandBarShow(void) {
     if (!DPCommandBar.on || DPCommandBar.unavailable) return;
+    DPBrowseWindow *mini = DPBrowseMiniForWindow(NSApp.keyWindow);
+    if (mini) { DPBrowseEditMini(mini, NO); return; }
     if (DPCurrentMiniLauncher.commandBar && DPCurrentMiniLauncher.window.visible) {
         [DPCurrentMiniLauncher focus]; [DPCurrentMiniLauncher.search selectText:nil]; return;
     }

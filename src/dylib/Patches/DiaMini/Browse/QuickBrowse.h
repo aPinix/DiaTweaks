@@ -32,9 +32,15 @@ enum { DPBrowseCancel = 0, DPBrowseCurrentTab = 1, DPBrowseForegroundTab = 2, DP
 @property(strong) id contentsDelegate;
 @property(strong) NSView *host;
 @property(strong) NSTextField *address;
-@property(strong) NSButton *backButton, *forwardButton;
+@property(strong) NSView *addressPill, *openControl;
+@property(strong) NSLayoutConstraint *addressWidth;
+@property(strong) NSPopover *destinationPopover;
+@property(strong) id profileContext;
+@property(strong) NSURL *pendingURL, *pendingOriginURL;
+@property NSTimeInterval pendingSince;
+@property BOOL pendingLoadObserved;
 @property(strong) NSTimer *refresh;
-@property BOOL closing, transferred;
+@property BOOL closing, transferred, promoting;
 @property NSRect launcherFrame;
 @property (strong) NSRunningApplication *returnApplication;
 - (BOOL)startWithURL:(NSURL *)url source:(DPBrowseSource *)source;
@@ -42,7 +48,11 @@ enum { DPBrowseCancel = 0, DPBrowseCurrentTab = 1, DPBrowseForegroundTab = 2, DP
 
 @interface DPBrowseWindow (Chrome)
 - (void)buildChrome;
+@end
+@interface DPBrowseWindow (ChromeState)
 - (void)updatePage;
+- (void)layoutBrowserToolbar;
+- (void)prepareNavigationToURL:(NSURL *)url;
 @end
 @interface DPBrowseWindow (Navigation)
 - (void)promote:(id)sender;
@@ -51,12 +61,17 @@ enum { DPBrowseCancel = 0, DPBrowseCurrentTab = 1, DPBrowseForegroundTab = 2, DP
 - (void)forward:(id)sender;
 - (void)reload:(id)sender;
 @end
+@interface DPBrowseWindow (OpenPromotion)
+- (BOOL)canPromoteToSource:(DPBrowseSource *)source;
+- (void)promoteToSource:(DPBrowseSource *)source;
+@end
 
 extern DPPatch DPDiaMini, DPDiaMiniExternal;
 extern NSMutableSet<DPBrowseWindow *> *DPBrowseWindows;
 extern NSMenuItem *DPNewMiniItem;
 void DPInstallQuickBrowse(void);
 BOOL DPBrowseCompatible(void);
+BOOL DPBrowseIsPromoting(void);
 BOOL DPBrowseShow(NSURL *url, DPBrowseSource *source);
 DPBrowseWindow *DPBrowseOpen(NSURL *url, DPBrowseSource *source, NSRect launcherFrame);
 DPBrowseSource *DPBrowseSourceFor(id contents);

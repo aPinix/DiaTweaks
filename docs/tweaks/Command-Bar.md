@@ -7,12 +7,12 @@ Enable **Settings → Patches → Browsing → Command Bar**, or `diatweaks enab
 - Press **Command+K** (⌘K) in Dia, or choose **File → Command Bar**. The bar appears centered in the current browser window, with up to five choices.
 - Type an address or search, use ↑/↓ to select a choice, then press Return to open a foreground tab. Escape or clicking outside dismisses the bar.
 - Normal suggestions complete the input with a selected suffix. Moving through them previews their query or address while retaining the original request for ranking. Deleting a suffix suppresses its immediate restoration, and input-method composition keeps control of its text and keys.
-- A matching tracked tab in the current window can show **Switch to Tab**. Return selects that exact tab without loading or creating another page. Mini keeps opening compact pages instead.
+- A matching tracked tab in the current regular window can show **Switch to Tab**. Return selects that exact tab without loading or creating another page. In an existing Mini, Return navigates that same Mini and does not offer main-window tab switching.
 - For site search, type a configured website keyword, such as `youtube.com`, then press Tab when **Search YouTube · Tab** appears. A provider badge identifies the scope; YouTube uses a red badge and selection.
 - Enter your query and press Return. Recent searches from that provider can also appear. Scoped ↑/↓ changes the selected query without replacing your input. Backspace on an empty query restores the site address; clicking the provider badge does the same. Escape leaves the scope for an empty normal input, and a second Escape dismisses the bar.
 - In **Settings → Patches → Command Bar**, record another keyboard shortcut or use **Reset** to restore ⌘K. Choosing ⌘T replaces Dia’s New Tab shortcut while Command Bar is enabled. Changing or disabling the shortcut restores the native binding. Other conflicting menu shortcuts and Dia Mini’s shortcut are rejected.
 
-The shortcut works within Dia. Dia Mini keeps its separate global shortcut and opens results in compact windows. Both bars share site search and can be enabled independently.
+The shortcut works within Dia, including inside Mini. Mini also provides ⌘L for editing its current URL and ⌘T for an empty bar when the Command Bar patch is off. Its separate global shortcut opens a new-Mini launcher. Both bars share site search and can be enabled independently. Mini reserves ⌘L, ⌘W, ⌘O, ⌘Return and its history/reload keys; the shortcut recorder rejects those combinations.
 
 Site-search providers come from the current Dia profile. YouTube is included when it has not been configured; a disabled YouTube provider is respected. Custom providers can use standard HTTP/HTTPS search templates. Scoped search uses that provider’s history and, when configured, its native keyword suggestions. An unconfigured YouTube query is never passed to the default engine for autocomplete.
 
