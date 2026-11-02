@@ -19,7 +19,7 @@ Used an isolated copy of the official Dia app with a separate Chromium profile a
 - Mini displays profile history and favicons. Typing produces Dia's native suggestions; Enter opens the selected real page. Escape dismisses the launcher.
 - Open in Dia transfers the live page into a selected tab. Starting in a new empty browser window also promotes into that window.
 - The user confirmed that Ctrl+Option+Command+N opens Mini while another app is active.
-- The launcher's top-right placement is covered by the geometry fixture. Final visual placement inspection was interrupted when the Mac locked.
+- The launcher's top-right placement was visually confirmed on the active display with two displays connected. Its top and right edges stay fixed as the list grows from four recent pages to six suggestions. Secondary-display geometry is also covered by the fixture.
 
 ## Remaining manual coverage
 
