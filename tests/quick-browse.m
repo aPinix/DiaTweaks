@@ -1,7 +1,7 @@
 // Real AppKit code with stand-ins for Dia's private page and tab APIs.
-#import "Commands/QuickBrowse/QuickBrowse.h"
+#import "Patches/DiaMini/Browse/QuickBrowse.h"
 #import "Patches/Peek/Indicator.h"
-#import "Commands/QuickBrowse/Launcher.h"
+#import "Patches/DiaMini/Browse/Launcher.h"
 
 DPPatch DPDiaMini = {.on = YES};
 DPPatch DPDiaMiniExternal;

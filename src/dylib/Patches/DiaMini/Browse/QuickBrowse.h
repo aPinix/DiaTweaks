@@ -83,4 +83,5 @@ void DPBrowseRememberBrowser(id browser, id delegate, NSWindow *window);
 NSWindow *DPBrowseWindowForBrowser(id browser);
 DPBrowseSource *DPBrowseFallbackSource(NSWindow *window);
 NSArray *DPBrowseKnownBrowsers(void);
+NSArray *DPBrowseKnownContents(void);
 id DPBrowseBrowserDelegate(id browser);

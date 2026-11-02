@@ -1,4 +1,4 @@
-#import "Commands/QuickBrowse/QuickBrowse.h"
+#import "Browse/QuickBrowse.h"
 
 DP_PATCH(DPDiaMiniExternal) {
     .key = @"diaMiniExternalLinks", .order = 221,

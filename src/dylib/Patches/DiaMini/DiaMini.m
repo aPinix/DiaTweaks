@@ -1,4 +1,4 @@
-#import "Commands/QuickBrowse/QuickBrowse.h"
+#import "Browse/QuickBrowse.h"
 
 DP_PATCH(DPDiaMini) {
     .key = @"diaMini", .order = 220,

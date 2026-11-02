@@ -7,6 +7,7 @@
 
 static NSMapTable *DPBrowseBrowsers, *DPBrowseDelegates, *DPBrowseHosts;
 static NSHashTable *DPBrowseClosedWindows;
+NSArray *DPBrowseKnownContents(void) { return DPBrowseBrowsers.keyEnumerator.allObjects; }
 
 BOOL DPBrowseSourceUsable(DPBrowseSource *source) {
     if (!source.browser || !source.window || [DPBrowseClosedWindows containsObject:source.window]) return NO;
@@ -86,27 +87,6 @@ DPBrowseSource *DPBrowseSourceFor(id contents) {
     return [DPBrowseClosedWindows containsObject:source.window] ? nil : source;
 }
 
-DPBrowseSource *DPBrowseFrontSource(void) {
-    for (DPBrowseWindow *preview in DPBrowseWindows)
-        if (preview.window.isKeyWindow) return preview.source;
-    NSMutableOrderedSet *windows = [NSMutableOrderedSet orderedSetWithArray:NSApp.orderedWindows];
-    [windows addObjectsFromArray:NSApp.windows];
-    for (NSWindow *window in windows) {
-        if (![window.accessibilityIdentifier hasPrefix:@"bigBrowserWindow"]) continue;
-        for (id<DPBrowseContents> contents in DPBrowseBrowsers.keyEnumerator)
-            if (DPBrowseHost(contents).window == window || contents.nativeView.window == window) {
-                DPBrowseSource *source = DPBrowseSourceFor(contents);
-                if (DPBrowseSourceUsable(source)) return source;
-            }
-        for (id contents in DPBrowseBrowsers.keyEnumerator) {
-            DPBrowseSource *source = DPBrowseSourceFor(contents);
-            if (source.window == window && DPBrowseSourceUsable(source)) return source;
-        }
-        DPBrowseSource *source = DPBrowseFallbackSource(window);
-        if (source) return source;
-    }
-    return nil;
-}
 
 void DPBrowseInstallTracking(void) {
     DPBrowseBrowsers = [NSMapTable weakToWeakObjectsMapTable];
