@@ -38,7 +38,7 @@ NSButton *DPBrowseMiniExtensionsButton(DPBrowseWindow *owner) {
         usingBlock:^(NSNotification *note) { DPBrowseCloseMiniExtensions(weak); }];
     @try {
         [popover showRelativeToRect:anchor.bounds ofView:anchor preferredEdge:NSRectEdgeMinY];
-        [popover.contentViewController.view.window makeFirstResponder:controller.search];
+        [popover.contentViewController.view.window makeFirstResponder:controller.table];
     } @catch (NSException *exception) { DPBrowseCloseMiniExtensions(self); }
 }
 @end

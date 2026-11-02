@@ -13,4 +13,5 @@
 
 @implementation DPBrowseWindow (ToolbarWindowEvents)
 - (void)windowDidResize:(NSNotification *)note { [self layoutBrowserToolbar]; }
+- (void)windowDidEndLiveResize:(NSNotification *)note { DPBrowseSaveMiniSize(self.window); }
 @end

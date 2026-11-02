@@ -13,7 +13,7 @@
     NSRect anchor = NSIsEmptyRect(self.launcherFrame) ? source.window.frame : self.launcherFrame;
     if (!NSIsEmptyRect(self.launcherFrame)) for (NSScreen *candidate in NSScreen.screens)
         if (NSIntersectsRect(candidate.frame, self.launcherFrame)) { screen = candidate; break; }
-    NSRect frame = DPBrowseFrame(anchor, screen.visibleFrame);
+    NSRect frame = DPBrowseRestoreMiniSize(DPBrowseFrame(anchor, screen.visibleFrame),screen.visibleFrame);
     NSWindowStyleMask style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable
         | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskFullSizeContentView;
     NSRect content = [NSWindow contentRectForFrameRect:frame styleMask:style];

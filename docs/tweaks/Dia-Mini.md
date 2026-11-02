@@ -18,7 +18,8 @@ Enable **Settings → Patches → Browsing → Dia Mini**, or `diatweaks enable 
 - Click the address pill or press ⌘L to edit the full URL in a centered Command Bar. ⌘T opens it with an empty input. Return loads the result in the same Mini window, including site searches.
 - With Command Bar enabled, its configured shortcut (⌘K by default) and **File → Command Bar** also open inside the active Mini. The global ⌥⌘N launcher still creates a new Mini.
 - Use ⌘[ / ⌘] for Back / Forward and ⌘R for Reload. **Open in**, ⌘O or ⌘Return moves the live page into a normal tab. The arrow opens a searchable list of Dia’s own destinations, preserving their native names and icons. Dia versions exposing only Profiles show **Search Profiles**. The current destination appears in the button; Arc’s Spaces are never imported.
-- The puzzle button lists the source profile’s installed extensions, including disabled extensions and those without a toolbar action. **Open in Dia** transfers this page to a regular tab where extension actions are available.
+- The puzzle button opens a compact navy list of extension icons and single-line names. Disabled extensions appear dimmed; tooltips expose their status. The header’s **Open in** button transfers this page to a regular tab where extension actions are available.
+- Mini remembers the browser window’s size after a manual resize, including across restarts. Saved sizes are reduced to fit the current display. A page canvas keeps the full window visible while a URL is loading.
 - Escape or ⌘W first closes an open Command Bar; the Mini remains. In site search, Escape first leaves the search scope. With the bar closed, Escape or ⌘W closes Mini.
 - Escape or the close button closes the temporary window. Turning Dia Mini off closes its windows and removes its File menu command.
 

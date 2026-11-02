@@ -184,3 +184,17 @@ Local ignored proof: `build/proof/mini-header-before.png`, `build/proof/mini-hea
 - Native checks in both layouts cover the header, actual extension catalogue and Mini-owned Command Bar. Choosing Personal moved the live Mini page into the source window; the disposable adopted tab was removed afterward. The top-tab check also confirmed `you` → Tab → Backspace restores `you`. Extension proof: `build/proof/mini-extensions-top-final.png`.
 
 The original three tabs remain intact. Disposable Mini windows were closed, sidebar tabs with auto-hide off were restored and saved, and Dia was reopened without test mode or a diagnostic probe. The unchanged documentation gate still needs three maintainer wiki pages and four sidebar links, including Command Bar. No upstream PR was submitted.
+
+## Mini window alignment, loading canvas and saved size
+
+AppKit repositioned its managed titlebar controls after Mini's header layout. Mini now hosts buttons created by AppKit's standard-window-button factory, with native close, minimize and full-screen actions, while hiding the titlebar's managed copies. Their centers stay on the address pill's center line. A lighter translucent tint retains more of the header's behind-window vibrancy.
+
+A themed canvas fills the body beneath Chromium from the first frame. A native check against a local server delaying its response by 25 seconds showed the entire blank window immediately, before content arrived. The canvas is confined to the body, preserving header transparency. A native Close-button check returned to the original three tabs.
+
+Manual resize completion saves Mini's outer size in the patch settings domain. Subsequent windows restore that size and constrain it to the active display; fullscreen and minimized sizes are excluded. Fixtures verify size persistence, fitting on a smaller secondary screen, native button alignment and the canvas bounds. Automated native resize drags did not resize the live window, so manual resize-and-reopen interaction remains a user check.
+
+The extension popup is now a compact navy icon/name list with 40-point rows and single-line truncated names. Disabled entries are dimmed and status is available through tooltips. The previous search header, detail lines and footer are removed from the visible list. Extension actions retain the regular-tab limitation described above.
+
+`make` and the complete AppKit fixture suite pass without compiler warnings. All 36 native scenarios pass with sidebar tabs and all 36 with top tabs: `build/test-sidebar-mini-window-fixes.json` and `build/test-top-mini-window-fixes.json`. The installed/build dylib SHA-256 is `560b575ff6de6d18be4c41b10b4e62d9c58131330ac51f14514aacaf44adf523`. The upstream documentation checker still reports three missing maintainer pages and four sidebar links; it remains unchanged.
+
+The aligned header is captured locally in `build/proof/mini-loading-canvas-aligned.png` after the delayed page loaded. The blank loading state and compact list were also inspected in native computer-use screenshots. Proof remains local and ignored.

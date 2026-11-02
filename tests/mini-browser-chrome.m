@@ -1,4 +1,5 @@
 #import "Patches/DiaMini/Browse/BrowserToolbar.h"
+#import "Patches/DiaMini/Shortcuts/Shortcut.h"
 void DPTestMiniBrowserProfiles(DPBrowseWindow *owner, DPBrowseSource *destination);
 
 static char DPChromeDelegateKey;
@@ -28,7 +29,7 @@ void DPTestMiniBrowserChrome(DPBrowseSource *source) {
         && owner.window.titleVisibility == NSWindowTitleHidden, @"the custom full-size titlebar replaces the automatic toolbar");
     NSCAssert([owner.window standardWindowButton:NSWindowCloseButton] && [owner.window standardWindowButton:NSWindowMiniaturizeButton], @"traffic lights remain native");
     [owner.window.contentView layoutSubtreeIfNeeded];
-    NSCAssert(owner.window.contentView.subviews.count == 2 && owner.host.superview == owner.window.contentView
+    NSCAssert(owner.window.contentView.subviews.count == 3 && owner.host.superview == owner.window.contentView
         && NSHeight(owner.host.frame) == NSHeight(owner.window.contentView.bounds) - 48
         && NSHeight(owner.browserHeader.frame) == 48, @"the page fills the body below an exact 48-point header");
     [owner.browserHeader layoutSubtreeIfNeeded];
@@ -40,6 +41,23 @@ void DPTestMiniBrowserChrome(DPBrowseSource *source) {
     NSCAssert(header.blendingMode == NSVisualEffectBlendingModeBehindWindow && !owner.window.opaque
         && CGColorGetAlpha(((DPMiniBrowserHeader *)header).tint.layer.backgroundColor) < 1, @"the header uses actual behind-window vibrancy and a translucent tint");
     DPMiniBrowserAddressPill *pill = (id)owner.addressPill;
+    NSView *canvas = DPFindView(owner.window.contentView,^BOOL(NSView *view) { return [view.identifier isEqual:@"DiaMiniPageCanvas"]; });
+    NSCAssert(canvas && NSEqualRects(canvas.frame,owner.host.frame), @"the full page body has a canvas before Chromium's first paint");
+    NSRect initialFrame = owner.window.frame;
+    id savedSize = [DPMiniShortcutDefaults() objectForKey:@"diaMiniWindowSize"];
+    [owner.window setFrame:NSMakeRect(100,100,900,600) display:NO]; DPBrowseSaveMiniSize(owner.window);
+    NSRect restored = DPBrowseRestoreMiniSize(initialFrame,NSMakeRect(0,0,1920,1080));
+    NSCAssert(restored.size.width == 900 && restored.size.height == 600, @"Mini restores its saved outer size");
+    NSRect constrained = DPBrowseRestoreMiniSize(initialFrame,NSMakeRect(-640,0,640,480));
+    NSCAssert(NSContainsRect(NSMakeRect(-640,0,640,480),constrained), @"saved sizes fit a smaller secondary screen");
+    if (savedSize) [DPMiniShortcutDefaults() setObject:savedSize forKey:@"diaMiniWindowSize"];
+    else [DPMiniShortcutDefaults() removeObjectForKey:@"diaMiniWindowSize"];
+    [owner.window setFrame:initialFrame display:NO]; [owner.window.contentView layoutSubtreeIfNeeded];
+    for (NSUInteger index=0; index<3; index++) {
+        NSButton *light = ((DPMiniBrowserHeader *)owner.browserHeader).windowButtons[index];
+        NSCAssert(!light.translatesAutoresizingMaskIntoConstraints && fabs(NSMidY(light.frame)-24)<0.5,
+            @"native traffic lights remain constrained to the header's center line");
+    }
     DPMiniBrowserOpenControl *open = (id)owner.openControl;
     NSCAssert(pill && open && owner.address.hidden && !owner.address.superview
         && [owner.address.stringValue isEqual:url.absoluteString], @"full URL stays in the model while the toolbar presents a domain");

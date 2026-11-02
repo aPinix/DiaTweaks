@@ -23,18 +23,31 @@ const CGFloat DPMiniBrowserHeaderHeight = 48;
 - (void)updateTint {
     BOOL dark = [[self.effectiveAppearance bestMatchFromAppearancesWithNames:@[NSAppearanceNameAqua, NSAppearanceNameDarkAqua]] isEqual:NSAppearanceNameDarkAqua];
     [self.effectiveAppearance performAsCurrentDrawingAppearance:^{
-        self.tint.layer.backgroundColor = (dark ? [NSColor colorWithSRGBRed:0.03 green:0.025 blue:0.10 alpha:0.65]
+        self.tint.layer.backgroundColor = (dark ? [NSColor colorWithSRGBRed:0.03 green:0.025 blue:0.10 alpha:0.32]
             : [NSColor.whiteColor colorWithAlphaComponent:0.30]).CGColor;
     }];
 }
 - (void)viewDidChangeEffectiveAppearance { [super viewDidChangeEffectiveAppearance]; [self updateTint]; }
 - (void)viewDidMoveToWindow { [super viewDidMoveToWindow]; [self updateTint]; }
 - (void)installWindowButtons {
+    NSMutableArray *buttons = [NSMutableArray array];
     for (NSUInteger index = 0; index < 3; index++) {
-        NSButton *button = [self.window standardWindowButton:(NSWindowButton)index];
-        button.translatesAutoresizingMaskIntoConstraints = YES;
+        [self.window standardWindowButton:(NSWindowButton)index].hidden = YES;
+        NSButton *button = [NSWindow standardWindowButton:(NSWindowButton)index forStyleMask:self.window.styleMask];
+        button.target = self.window;
+        button.action = index == 0 ? @selector(performClose:) : index == 1 ? @selector(performMiniaturize:) : @selector(toggleFullScreen:);
+        button.accessibilityLabel = @[@"Close",@"Minimize",@"Full Screen"][index];
+        [buttons addObject:button];
+        NSSize size = button.frame.size;
         [self addSubview:button];
+        button.translatesAutoresizingMaskIntoConstraints = NO;
+        [NSLayoutConstraint activateConstraints:@[
+            [button.centerXAnchor constraintEqualToAnchor:self.leadingAnchor constant:18 + index * 23],
+            [button.centerYAnchor constraintEqualToAnchor:self.topAnchor constant:24],
+            [button.widthAnchor constraintEqualToConstant:size.width], [button.heightAnchor constraintEqualToConstant:size.height]
+        ]];
     }
+    self.windowButtons = buttons;
     self.needsLayout = YES;
 }
 - (void)layout {
@@ -43,7 +56,7 @@ const CGFloat DPMiniBrowserHeaderHeight = 48;
     self.owner.openControl.frame = NSMakeRect(width - openWidth - 8, 8, openWidth, 30);
     self.owner.addressPill.frame = NSMakeRect(83, 8, MAX(1, width - openWidth - 99), 30);
     for (NSUInteger index = 0; index < 3; index++) {
-        NSButton *button = [self.window standardWindowButton:(NSWindowButton)index];
+        NSButton *button = self.windowButtons[index];
         NSSize size = button.frame.size;
         button.frame = NSMakeRect(18 + index * 23 - size.width / 2, 24 - size.height / 2, size.width, size.height);
     }

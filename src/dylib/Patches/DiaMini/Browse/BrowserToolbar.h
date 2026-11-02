@@ -22,9 +22,12 @@
 @end
 
 extern const CGFloat DPMiniBrowserHeaderHeight;
+NSRect DPBrowseRestoreMiniSize(NSRect frame, NSRect screen);
+void DPBrowseSaveMiniSize(NSWindow *window);
 @interface DPMiniBrowserHeader : NSVisualEffectView
 @property(weak) DPBrowseWindow *owner;
 @property(strong) NSView *tint;
+@property(copy) NSArray<NSButton *> *windowButtons;
 - (instancetype)initWithOwner:(DPBrowseWindow *)owner;
 - (void)installWindowButtons;
 @end
