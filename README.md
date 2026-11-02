@@ -11,6 +11,8 @@ Small tweaks for [Dia](https://www.diabrowser.com) that stay in place when Dia u
 
 Unofficial and not affiliated with The Browser Company. Apple Silicon, macOS 14 or later.
 
+For upstream PRs, follow [CONTRIBUTING.md](CONTRIBUTING.md), the [fork contribution notes](docs/contributing-from-this-fork.md) and the current [verification record](docs/peek-mini-verification.md).
+
 ## Tweaks
 
 Each tweak changes one part of how Dia looks, like the padding around pages or a button in the toolbar. There's also a command, **Group Tabs by Domain**, that groups tabs by site.
