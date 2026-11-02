@@ -14,11 +14,13 @@ extern DPPatch DPPeek;
 @interface DPPeekCard : NSView
 @property (nonatomic, strong) NSView *card, *clip, *host, *controls;
 @property (nonatomic, strong) id<DPPeekPage> page;
+@property (nonatomic, strong) NSURL *initialURL;
 @property (nonatomic, weak) id sourceDelegate, source;  // The page it was opened from, and Dia's delegate for that page.
 @property (nonatomic, weak) NSView *pane;               // The page area it covers.
 @property (nonatomic, weak) NSView *surface;            // The complete browser frame, including its rounded edge.
 @property (nonatomic, strong) id paneObserver, monitor;
-@property (nonatomic, strong) NSTimer *openingTimer;
+@property (nonatomic, strong) NSTimer *contentTimer;
+@property (nonatomic, strong) NSView *loadingCanvas;
 @property (nonatomic) NSPoint clickPointInWindow;  // Survives pointer movement and window repositioning.
 @property (nonatomic) BOOL closing;
 @property (nonatomic) BOOL expanding, backgroundWantsLayer;
@@ -36,7 +38,7 @@ extern DPPatch DPPeek;
 - (void)animateOut:(void (^)(void))completion;
 @end
 @interface DPPeekCard (Opening)
-- (void)waitForContent;
+- (void)showWhileLoading;
 @end
 @interface DPPeekCard (Origin)
 - (NSRect)originFrame;

@@ -67,6 +67,6 @@ DPPeekCard *DPPeekShowCard(NSWindow *window, id<DPPeekPage> page, NSPoint origin
                                                                         usingBlock:^(NSNotification *note) { [weak followPane]; }];
     }
     peek.monitor = DPWatchKeys(peek);
-    [peek waitForContent];
+    [peek showWhileLoading];
     return peek;
 }

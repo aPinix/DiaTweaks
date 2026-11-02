@@ -49,9 +49,10 @@ static BOOL reduceMotion;
 @end
 
 @interface FixtureConfig : NSObject
-@property BOOL foreground, untracked;
+@property BOOL foreground, untracked, initiallyHidden;
 @end
 @implementation FixtureConfig
+- (instancetype)init { if ((self = [super init])) _initiallyHidden = YES; return self; }
 @end
 @interface FixtureNavigation : NSObject
 @property(strong) NSURL *loaded;
@@ -91,6 +92,7 @@ static BOOL reduceMotion;
 @interface FixtureDelegate : NSObject
 @property(weak) NSWindow *destination;
 @property BOOL acceptPromotion;
+@property(strong) NSURL *lastPromotionURL;
 @end
 @implementation FixtureDelegate
 - (void)adopt:(FixtureContents *)contents {
@@ -101,7 +103,7 @@ static BOOL reduceMotion;
 - (BOOL)webContents:(id)c willShowContextMenu:(NSMenu *)m withElement:(id)e { return YES; }
 - (void)webContents:(id)s didCreateNewWebContent:(FixtureContents *)c targetURL:(NSURL *)u disposition:(NSInteger)d {
     NSCAssert(d == 2 || d == 9, @"tab or split disposition");
-    if (self.acceptPromotion) [self adopt:c];
+    if (self.acceptPromotion) { self.lastPromotionURL = u; [self adopt:c]; }
 }
 - (void)webContents:(id)c didCloseWithSessionID:(id)s {}
 - (void)browser:(id)b didRestoreWebContents:(id)c withSessionId:(id)s {}
@@ -110,13 +112,14 @@ static BOOL reduceMotion;
 }
 @end
 @interface FixtureBrowser : NSObject
+@property(strong) FixtureConfig *lastConfiguration;
 @property(strong) FixtureContext *context;
 @property(weak) id delegate;
 @property(copy) NSString *windowIdentifier;
 @end
 @implementation FixtureBrowser
 - (instancetype)init { if ((self=[super init])) _context=[FixtureContext new]; return self; }
-- (id)createWebContents:(id)config { return [objc_getClass(DPDiaWebContents) new]; }
+- (id)createWebContents:(id)config { self.lastConfiguration = config; return [objc_getClass(DPDiaWebContents) new]; }
 - (void)takeOwnershipOfWebContents:(id)contents {}
 - (void)setWindow:(NSWindow *)window {}
 - (BOOL)autocomplete:(NSString *)text cursorPosition:(int)position preventInlineAutocomplete:(BOOL)prevent startFresh:(BOOL)fresh
@@ -339,6 +342,8 @@ int main(void) {
         DPTestPeekReady(window);
         DPPeekOpen(window,url,NSMakePoint(500,500),delegate,sourcePage);
         DPPeekCard *peek = DPPeekCardIn(window);
+        NSCAssert(browser.lastConfiguration.foreground && browser.lastConfiguration.untracked && !browser.lastConfiguration.initiallyHidden,
+            @"Peek starts as a visible foreground page without becoming a tracked tab");
         DPTestPeekOpening(peek);
         NSCAssert(peek && peek.pane == pane && peek.surface==browserFrame && peek.superview==browserFrame.superview,@"Peek tracks the complete browser-content frame");
         NSCAssert(peek.subviews.count==2 && peek.backdropLayer==browserFrame.layer,@"the content frame itself fades without a blur or painted overlay");
@@ -403,11 +408,13 @@ int main(void) {
         NSCAssert([peek.backdropLayer animationForKey:@"DiaTweaks.Peek.Depth"],@"background depth animation installed");
         NSCAssert(fabs(DPPeekDepth(NSMakeRect(0,0,800,600),0.975).m41-10)<0.01,@"depth anchored at center");
         beforeClose=closed; beforePromotion=promoted; NSUInteger beforeLoads=loads;
+        [(NSObject *)peek.page setValue:nil forKey:@"url"];
         [peek close:1];
         NSCAssert(peek.superview && promoted==beforePromotion,@"page stays in the card during expansion");
         drain(0.40);
         NSCAssert(!DPPeekCardIn(window) && promoted==beforePromotion+1 && closed==beforeClose && loads==beforeLoads,
             @"expanded page becomes a tab without reloading or closing it");
+        NSCAssert([delegate.lastPromotionURL isEqual:url], @"expanding before the URL commits preserves the pending request target");
         NSCAssert(![browserFrame.layer animationForKey:@"DiaTweaks.Peek.Depth"],@"the entire content frame is restored after expansion");
         NSCAssert(!DPFindView(window.contentView,^BOOL(NSView *v){ return [v.accessibilityLabel isEqual:@"Peek open"]; }),@"source badge removed with the card");
         NSCAssert(NSWidth(tabContent.frame)==208,@"closing Peek restores the tab's full native width");

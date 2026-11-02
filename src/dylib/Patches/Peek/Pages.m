@@ -35,11 +35,17 @@ void DPPeekOpen(NSWindow *window, NSURL *url, NSPoint origin, id delegate, id so
     id factory = DPPeekFactory(source);
     Class configuration = objc_getClass(DPDiaWebContentsConfiguration);
     if (!window || !DPPeekCanLoad(url) || !factory || !configuration || DPPeekCardIn(window)) return;
-    id page = ((id (*)(id, SEL, id))objc_msgSend)(factory, @selector(createWebContents:), [configuration new]);
+    id config = [configuration new];
+    void (*flag)(id, SEL, BOOL) = (void *)objc_msgSend;
+    if ([config respondsToSelector:@selector(setForeground:)]) flag(config, @selector(setForeground:), YES);
+    if ([config respondsToSelector:@selector(setUntracked:)]) flag(config, @selector(setUntracked:), YES);
+    if ([config respondsToSelector:@selector(setInitiallyHidden:)]) flag(config, @selector(setInitiallyHidden:), NO);
+    id page = ((id (*)(id, SEL, id))objc_msgSend)(factory, @selector(createWebContents:), config);
     if (!page) return;
     if ([page respondsToSelector:@selector(bootstrapRendering)]) [page performSelector:@selector(bootstrapRendering)];
     DPPeekCard *peek = DPPeekShowCard(window, page, origin);
     if ([page respondsToSelector:@selector(bootstrapRenderingComplete)]) [page performSelector:@selector(bootstrapRenderingComplete)];
+    peek.initialURL = url;
     DPPeekLoad(page, url);
     if (!peek) {
         DPPeekGive(page, delegate, source, url, 2);  // NewForegroundTab
@@ -61,7 +67,9 @@ void DPPeekOpen(NSWindow *window, NSURL *url, NSPoint origin, id delegate, id so
     [self removeFromSuperview];
     [window makeKeyWindow];
     NSInteger disposition = exit == 2 ? 9 : 2;  // SplitView, NewForegroundTab
-    if (exit == 0 || !DPPeekGive(page, self.sourceDelegate, self.source, [page valueForKey:@"url"], disposition))
+    NSURL *url = [page valueForKey:@"url"];
+    if (!DPPeekCanLoad(url)) url = self.initialURL;
+    if (exit == 0 || !DPPeekGive(page, self.sourceDelegate, self.source, url, disposition))
         [page performSelector:@selector(close)];
 }
 
