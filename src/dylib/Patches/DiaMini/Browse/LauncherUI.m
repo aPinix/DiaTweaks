@@ -41,7 +41,7 @@
     panel.title = @"Dia Mini"; panel.identifier = @"DiaTweaks.MiniLauncher";
     panel.appearance = self.source.window.effectiveAppearance ?: NSApp.effectiveAppearance;
     panel.level = NSFloatingWindowLevel; panel.collectionBehavior = NSWindowCollectionBehaviorCanJoinAllSpaces | NSWindowCollectionBehaviorFullScreenAuxiliary;
-    panel.backgroundColor = NSColor.clearColor; panel.opaque = NO; panel.hasShadow = YES;
+    panel.backgroundColor = NSColor.clearColor; panel.opaque = NO; panel.hasShadow = NO;
     panel.movableByWindowBackground = YES; panel.releasedWhenClosed = NO; panel.delegate = self;
     self.window = panel;
     DPMiniSearchRoot *root = [[DPMiniSearchRoot alloc] initWithFrame:NSMakeRect(0, 0, width, 110)];
@@ -49,12 +49,15 @@
     root.wantsLayer = YES; root.layer.cornerRadius = 18; root.layer.masksToBounds = YES;
     root.layer.borderWidth = 0.5; root.layer.borderColor = NSColor.separatorColor.CGColor;
     panel.contentView = root;
-    NSImageView *glass = [[NSImageView alloc] initWithFrame:NSMakeRect(24, 23, 16, 16)];
+    NSImageView *glass = [[NSImageView alloc] initWithFrame:NSMakeRect(24, (DPMiniHeaderHeight - 16) / 2, 16, 16)];
+    glass.identifier = @"DiaMiniSearchIcon";
     glass.image = [NSImage imageWithSystemSymbolName:@"magnifyingglass" accessibilityDescription:nil]; [root addSubview:glass];
     self.search = [[NSTextField alloc] initWithFrame:NSMakeRect(50, 17, width - 104, 30)];
     self.search.bordered = NO; self.search.drawsBackground = NO; self.search.focusRingType = NSFocusRingTypeNone;
     self.search.usesSingleLineMode = YES;
     self.search.placeholderString = @"Search or Enter URL…"; self.search.font = [NSFont systemFontOfSize:16 weight:NSFontWeightSemibold];
+    CGFloat textHeight = self.search.fittingSize.height;
+    self.search.frame = NSMakeRect(50, (DPMiniHeaderHeight - textHeight) / 2, width - 104, textHeight);
     self.search.delegate = self; self.search.target = self; self.search.action = @selector(choose:);
     self.search.accessibilityIdentifier = @"DiaMiniSearchField"; self.search.accessibilityLabel = @"Search or Enter URL";
     [root addSubview:self.search];
@@ -63,36 +66,20 @@
     close.wantsLayer = YES; close.layer.cornerRadius = 6;
     close.layer.backgroundColor = [NSColor.controlColor colorWithAlphaComponent:0.4].CGColor;
     [root addSubview:close];
+    NSBox *divider = [[NSBox alloc] initWithFrame:NSMakeRect(10, DPMiniHeaderHeight, width - 20, 1)];
+    divider.boxType = NSBoxSeparator; divider.identifier = @"DiaMiniSearchDivider"; [root addSubview:divider];
     self.table = [[DPMiniSuggestionTable alloc] initWithFrame:NSZeroRect]; self.table.headerView = nil;
     self.table.style = NSTableViewStylePlain;
-    self.table.backgroundColor = NSColor.clearColor; self.table.rowHeight = 50; self.table.intercellSpacing = NSZeroSize;
+    self.table.backgroundColor = NSColor.clearColor; self.table.rowHeight = DPMiniRowHeight; self.table.intercellSpacing = NSZeroSize;
     self.table.delegate = self; self.table.dataSource = self; self.table.target = self; self.table.action = @selector(choose:);
     self.table.focusRingType = NSFocusRingTypeNone;
     [self.table addTableColumn:[[NSTableColumn alloc] initWithIdentifier:@"suggestion"]];
     self.scroll = [[NSScrollView alloc] initWithFrame:NSZeroRect]; self.scroll.drawsBackground = NO;
     self.scroll.documentView = self.table; self.scroll.hasVerticalScroller = NO; [root addSubview:self.scroll];
-    self.hint = [NSTextField labelWithString:@"Recent results from this profile"];
-    self.hint.font = [NSFont systemFontOfSize:11]; self.hint.textColor = NSColor.secondaryLabelColor; [root addSubview:self.hint];
+    self.status = [NSTextField labelWithString:@"No recent results"];
+    self.status.font = [NSFont systemFontOfSize:12]; self.status.textColor = NSColor.secondaryLabelColor;
+    [root addSubview:self.status];
     [self resizeForResults];
 }
 - (void)dismiss:(id)sender { [self close]; }
-@end
-
-@implementation DPMiniLauncher (Results)
-- (void)resizeForResults {
-    CGFloat rows = MIN(self.search.stringValue.length ? 6 : 4, self.suggestions.count);
-    CGFloat height = 74 + rows * 50 + 56;
-    NSScreen *screen = self.window.screen ?: NSScreen.mainScreen;
-    height = MIN(height, MAX(130, NSHeight(screen.visibleFrame) - 32));
-    NSRect frame = self.window.frame; frame.origin.y += frame.size.height - height; frame.size.height = height;
-    frame.origin.y = MAX(NSMinY(screen.visibleFrame), MIN(frame.origin.y, NSMaxY(screen.visibleFrame) - height));
-    [self.window setFrame:frame display:YES];
-    CGFloat width = self.window.contentView.bounds.size.width;
-    CGFloat listHeight = MAX(0, MIN(rows * 50, height - 124));
-    self.scroll.frame = NSMakeRect(10, 68, width - 20, listHeight);
-    self.scroll.hasVerticalScroller = listHeight < rows * 50;
-    self.table.tableColumns.firstObject.width = width - 20;
-    self.table.frame = NSMakeRect(0, 0, width - 20, rows * 50);
-    self.hint.frame = NSMakeRect(24, height - 40, width - 48, 18);
-}
 @end

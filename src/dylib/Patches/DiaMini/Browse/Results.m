@@ -40,13 +40,13 @@
 - (void)setResults:(NSArray<DPBrowseSuggestion *> *)results {
     NSInteger selected = self.table.selectedRow;
     NSURL *previous = selected >= 0 && selected < (NSInteger)self.suggestions.count ? self.suggestions[selected].url : nil;
-    NSUInteger limit = self.search.stringValue.length ? 6 : 4;
-    self.suggestions = [results subarrayWithRange:NSMakeRange(0, MIN(limit,results.count))];
+    self.suggestions = [results subarrayWithRange:NSMakeRange(0, MIN(DPMiniResultLimit,results.count))];
     [self.table reloadData];
     selected = 0;
     for (NSUInteger i=0;i<self.suggestions.count;i++) if ([self.suggestions[i].url isEqual:previous]) selected=i;
     if (self.suggestions.count) [self.table selectRowIndexes:[NSIndexSet indexSetWithIndex:selected] byExtendingSelection:NO];
-    self.hint.stringValue = self.suggestions.count ? @"↵ Open    ·    esc Close" : @"Recent results from this profile";
+    self.status.stringValue = self.search.stringValue.length ? @"Press Return to search" : @"No recent results";
+    self.status.hidden = self.suggestions.count != 0;
     [self resizeForResults];
     id context = DPBrowseContext(self.source);
     if (![context respondsToSelector:@selector(favicon:completion:)]) return;

@@ -13,7 +13,7 @@ DPMiniLauncher *DPCurrentMiniLauncher;
     [self query];
     if (self.source) return;
     self.startingSource = YES;
-    self.hint.stringValue = @"Starting Dia…";
+    self.status.stringValue = @"Starting Dia…";
     DPBrowsePrepareSource();
     __weak DPMiniLauncher *weak = self;
     __block NSUInteger polls = 0;
@@ -24,7 +24,7 @@ DPMiniLauncher *DPCurrentMiniLauncher;
         if (!launcher.source && ++polls < 100) return;
         [timer invalidate]; launcher.sourceTimer = nil; launcher.startingSource = NO;
         if (launcher.source) { [launcher.window makeKeyAndOrderFront:nil]; [launcher query]; }
-        else launcher.hint.stringValue = @"Open a Dia window to use its profile";
+        else launcher.status.stringValue = @"Open a Dia window to use its profile";
     }];
 }
 - (void)query {
@@ -67,7 +67,10 @@ DPMiniLauncher *DPCurrentMiniLauncher;
     if (!url || !self.source) { NSBeep(); return; }
     self.openingResult = YES;
     DPBrowseWindow *page = DPBrowseOpen(url, self.source, self.window.frame);
-    if (!page) { self.openingResult = NO; self.hint.stringValue = @"The source profile closed. Open a Dia window and try again."; return; }
+    if (!page) {
+        self.openingResult = NO; [self setResults:@[]];
+        self.status.stringValue = @"Open a Dia window and try again."; return;
+    }
     page.returnApplication = self.previousApplication;
     DPBrowseRemember(self.source, url, item.title ?: self.search.stringValue);
     [self close];
@@ -76,6 +79,7 @@ DPMiniLauncher *DPCurrentMiniLauncher;
     if (!self.openingResult && !self.startingSource && !self.presenting) { self.restorePrevious = NO; [self close]; }
 }
 - (void)windowWillClose:(NSNotification *)note {
+    [self closeLauncherShadow];
     self.generation++; [self.sourceTimer invalidate]; self.sourceTimer = nil;
     if (self.activationObserver) [NSNotificationCenter.defaultCenter removeObserver:self.activationObserver];
     self.activationObserver = nil;

@@ -72,3 +72,16 @@ Transforms use the parent layer's coordinates. AppKit flips the card's backing l
 - Local proof: `build/proof/peek-origin-before.mp4`, `build/proof/peek-origin-sidebar-after.mp4` and `build/proof/peek-origin-top-after.mp4`. The final recordings use the guide's silent H.264, 1120×700, 60 fps settings and remain ignored by Git.
 
 The unchanged upstream documentation gate still reports the three missing wiki pages and sidebar links above. No upstream PR has been submitted.
+
+## Mini launcher layout
+
+Mini now offers up to five recent results or search suggestions. The Open/Close hint row is removed. A divider separates the results from a 64-point header, whose search field uses its natural text height to center the placeholder, typed text and caret with the icon. Startup and empty-state messages occupy the list area.
+
+A broad 32-point shadow extends outside the visible panel through a noninteractive child window. Its transparent center preserves the panel's appearance. The shadow follows resizing, cannot take focus or mouse input, and closes with the launcher. Its window allows the shadow padding beyond the screen edge so the menu bar does not shift it downward.
+
+- `make` and `make test-quick-browse` pass without compiler warnings. New fixtures check five-choice limits for recents and search, keyboard bounds, all five rows fitting, header alignment, empty states, the fixed top-right anchor, screen-edge shadow alignment and cleanup after opening a result.
+- The installed build passes all 34 native scenarios with sidebar tabs and all 34 with top tabs. Reports are `build/test-sidebar-mini-layout.json` and `build/test-top-mini-layout.json`; neither has unavailable patches or safe mode.
+- Native checks confirm five recent choices, five typed suggestions, centered placeholder and typed text, the divider, and the larger aligned shadow in both layouts. Repeated Down stops at the fifth suggestion; Escape dismisses Mini.
+- Static proof stays local: `build/proof/mini-launcher-before.png`, `build/proof/mini-launcher-sidebar-after.png`, `build/proof/mini-launcher-typed-after.png` and `build/proof/mini-launcher-top-after.png`. Review browsing history before attaching these ignored screenshots to a PR.
+
+The unchanged documentation gate still reports the same three missing upstream wiki pages and sidebar links. No patch key or upstream PR is added by this change.

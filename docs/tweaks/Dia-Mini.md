@@ -8,6 +8,7 @@ Enable **Settings → Patches → Browsing → Dia Mini**, or `diatweaks enable 
 - In **Settings → Patches → Dia Mini**, click the shortcut beside **Keyboard shortcut** and press a new combination with Command, Control or Option. Release the key to save it. Escape, clicking elsewhere or leaving the page cancels recording. **Reset** restores ⌥⌘N. Changes apply immediately and survive restarting Dia; the File menu shows the chosen combination.
 - The search box opens at the top-right of the screen under the pointer, inset from the menu bar and screen edge. It keeps that corner as results appear.
 - Recent results come from the current Dia profile’s history. Start typing for native browser suggestions, use ↑/↓ to select, and press Enter to open the result in a compact Mini window.
+- The search panel shows up to five choices, separated from the centered search header by a divider. It has a broad, soft shadow and no bottom hint row. Empty-state and startup messages appear in the list area.
 - Escape or a click outside dismisses the search box. Closing it leaves the page you were working on in place.
 - Right-click a web link and select **Open Link in Dia Mini**.
 - The separate **[Open external links in Dia Mini](Open-external-links-in-Dia-Mini.md)** option opens links from other apps in Mini first. Dia must be your chosen browser for that link. It does not change clicks inside webpages.

@@ -1,5 +1,7 @@
 #import "QuickBrowse.h"
 
+enum { DPMiniHeaderHeight = 64, DPMiniListTop = 68, DPMiniRowHeight = 50, DPMiniListBottom = 12, DPMiniResultLimit = 5 };
+
 @interface DPBrowseSuggestion : NSObject
 @property (copy) NSString *title;
 @property (strong) NSURL *url;
@@ -9,7 +11,8 @@
 
 @interface DPMiniLauncher : NSWindowController <NSTextFieldDelegate, NSWindowDelegate>
 @property (strong) DPBrowseSource *source;
-@property (strong) NSTextField *search, *hint;
+@property (strong) NSTextField *search, *status;
+@property (strong) NSWindow *shadowWindow;
 @property (strong) NSTableView *table;
 @property (strong) NSScrollView *scroll;
 @property (copy) NSArray<DPBrowseSuggestion *> *suggestions;
@@ -36,6 +39,10 @@
 @end
 @interface DPMiniLauncher (Results)
 - (void)resizeForResults;
+@end
+@interface DPMiniLauncher (Shadow)
+- (void)updateLauncherShadow;
+- (void)closeLauncherShadow;
 @end
 
 extern DPMiniLauncher *DPCurrentMiniLauncher;

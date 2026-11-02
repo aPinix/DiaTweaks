@@ -6,6 +6,7 @@
 #import "mini-shortcuts.h"
 
 void DPTestPeekOrigin(DPPeekCard *peek);
+void DPTestMiniLauncherLayout(DPMiniLauncher *launcher);
 
 DPPatch DPDiaMini = {.on = YES};
 DPPatch DPDiaMiniExternal;
@@ -268,10 +269,13 @@ int main(void) {
             @"temporary search box shows recent results (launcher=%@ source=%@ expected=%@ count=%lu current=%@)",
             launcher,launcher.source.browser,browser,launcher.suggestions.count,DPCurrentMiniLauncher);
         NSCAssert(launcher.table.selectedRow==0,@"favicon updates preserve the highlighted result");
+        DPTestMiniLauncherLayout(launcher);
+        NSWindow *launcherShadow=launcher.shadowWindow;
         launcher.search.stringValue=@"first"; [launcher query]; launcher.search.stringValue=@"second"; [launcher query]; drain(0.03);
         NSCAssert([launcher.suggestions.firstObject.url.path isEqual:@"/second"],@"out-of-order suggestions cannot replace the latest query");
         [launcher choose:nil];
         NSCAssert(!DPCurrentMiniLauncher && DPBrowseWindows.count==1,@"Enter replaces the launcher with a compact result window");
+        NSCAssert(!launcherShadow.visible && !launcherShadow.parentWindow,@"closing the launcher leaves no shadow window behind");
         NSCAssert([((FixtureNavigation *)mini().contents.navigationController).loaded.path isEqual:@"/second"],@"selected native result opened");
         [mini() close];
         DPBrowseShowLauncher(); launcher=DPCurrentMiniLauncher;
