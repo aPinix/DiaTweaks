@@ -16,6 +16,22 @@ static NSRect DPTransformedFrame(DPPeekCard *peek, CATransform3D transform, CGPo
     return [peek convertRectFromLayer:[layer convertRect:layer.bounds toLayer:parent]];
 }
 
+void DPTestPeekOpening(DPPeekCard *peek) {
+    CAAnimationGroup *opening = (id)[peek.card.layer animationForKey:@"peek"];
+    CABasicAnimation *growth = nil;
+    for (CABasicAnimation *part in opening.animations) if ([part.keyPath isEqual:@"transform"]) growth = part;
+    NSCAssert(growth.fromValue, @"opening has a spatial starting state");
+    CATransform3D seed = [growth.fromValue CATransform3DValue];
+    [peek.window displayIfNeeded];
+    [NSRunLoop.mainRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];
+    NSRect actual = DPTransformedFrame(peek, seed, peek.card.layer.anchorPoint), expected = peek.originFrame;
+    NSCAssert(fabs(NSMidX(actual) - NSMidX(expected)) < 0.01 && fabs(NSMidY(actual) - NSMidY(expected)) < 0.01
+        && fabs(NSWidth(actual) - NSWidth(expected)) < 0.01 && fabs(NSHeight(actual) - NSHeight(expected)) < 0.01,
+        @"the original opening seed maps to the click after the first real display (actual=%@ expected=%@)",
+        NSStringFromRect(actual), NSStringFromRect(expected));
+    NSCAssert([peek.card.layer animationForKey:@"peek"], @"initial display preserves the opening animation");
+}
+
 void DPTestPeekOrigin(DPPeekCard *peek) {
     [NSRunLoop.mainRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.02]];
     NSCAssert(peek.card.layer.superlayer == peek.layer, @"check the rendered AppKit layer hierarchy");

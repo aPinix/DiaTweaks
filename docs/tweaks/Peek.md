@@ -5,6 +5,7 @@ Preview a link over the current Dia window, using the source tab’s Chromium br
 Enable **Settings → Patches → Browsing → Peek**, or `diatweaks enable peek`.
 
 - Shift-click a link. A card grows from the clicked point without stretching the page, while the background scales to 97.5% around its center. The sidebar remains usable.
+- Growth waits for Chromium's first displayable page, so rendering a blank host cannot consume the entrance. Closing before that frame arrives cancels the pending opening.
 - The whole browser-content frame, including its rounded edge, stays sharp and fades to 20% opacity. The native window theme shows through beneath it. Peek sits immediately above that frame and below the native sidebar, so revealing a hidden sidebar keeps it above the preview.
 - Card edges align to physical pixels. The webpage extends one pixel underneath the rounded clip, preventing a backing strip from appearing beside the content at fractional sizes.
 - Press Escape or ⌘W, use the close button, or click outside the card to dismiss it. The card returns to the original clicked point with a 220 ms fade, with the controls fading out and the page behind returning together. Moving the pointer or repositioning the window does not change that destination.

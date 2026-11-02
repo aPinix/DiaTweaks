@@ -6,6 +6,8 @@
 #import "mini-shortcuts.h"
 
 void DPTestPeekOrigin(DPPeekCard *peek);
+void DPTestPeekOpening(DPPeekCard *peek);
+void DPTestPeekReady(NSWindow *window);
 void DPTestMiniLauncherLayout(DPMiniLauncher *launcher);
 void DPTestSiteSearch(DPBrowseSource *source);
 void DPTestCommandBar(DPBrowseSource *source);
@@ -332,8 +334,10 @@ int main(void) {
         [emptyWindow close]; [window makeKeyAndOrderFront:nil];
         NSCAssert(DPBrowseShow(url,source),@"Mini reopens");
 
+        DPTestPeekReady(window);
         DPPeekOpen(window,url,NSMakePoint(500,500),delegate,sourcePage);
         DPPeekCard *peek = DPPeekCardIn(window);
+        DPTestPeekOpening(peek);
         NSCAssert(peek && peek.pane == pane && peek.surface==browserFrame && peek.superview==browserFrame.superview,@"Peek tracks the complete browser-content frame");
         NSCAssert(peek.subviews.count==2 && peek.backdropLayer==browserFrame.layer,@"the content frame itself fades without a blur or painted overlay");
         CAAnimationGroup *backdrop=(id)[peek.backdropLayer animationForKey:@"DiaTweaks.Peek.Depth"];

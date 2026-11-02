@@ -103,3 +103,16 @@ The disposable test windows were removed. Sidebar tabs and the original auto-hid
 This reconstructs the observed navigation/input flow, not every Arc command or ranking rule. Suggestions use Dia’s profile and autocomplete. Switching covers tracked, initialized web tabs in the current window/profile, excluding dormant session-only tabs, Mini and Peek. Private-window and second-profile coverage remains a native manual check; fixtures enforce source isolation.
 
 The unchanged upstream documentation checker now reports four missing maintainer wiki pages and sidebar links: Peek, Dia Mini, Open external links in Dia Mini, and Command Bar. Local notes and proof do not bypass that gate.
+
+## Visible Peek entrance after first paint
+
+The opening transform was correct, but its 200 ms animation could finish while Chromium's new host was still transparent. The page then appeared at full size. Dismissal already had painted content, so its return to the saved click point remained visible.
+
+Peek now keeps that empty card invisible and waits for ArcCore's `isReadyToDisplay` signal and a web URL before starting the existing entrance. The backdrop still responds immediately. The card is laid out before the transform is calculated, and closing or transferring it cancels the pending readiness timer. The transparent clipping background, closing curve and Reduce Motion behavior stay intact.
+
+- `make` and `make test-quick-browse` pass without compiler warnings. New fixtures delay first paint beyond the whole entrance, then check a fresh full-duration growth from the original click; closing before readiness cannot resurrect the card or its controls. A separate first-display check maps the original seed through the rendered AppKit hierarchy.
+- Installed and checked in the existing Dia 1.56.0 (89901). All 36 native scenarios pass in sidebar mode and all 36 in top-tab mode, with no unavailable patches or safe mode. Reports: `build/test-sidebar-peek-opening.json` and `build/test-top-peek-opening.json`.
+- Native frame-by-frame review shows growth from an upper Apps link in sidebar mode and a lower release-heading link with top tabs. The previous recording showed the backdrop animate before the page appeared at its final size.
+- Local, ignored proof: `build/proof/peek-opening-before.mp4`, `build/proof/peek-opening-sidebar-after.mp4` and `build/proof/peek-opening-top-after.mp4`, encoded as silent H.264 at 1120×700 and 60 fps. Captures use disposable public-page windows.
+
+The unchanged documentation gate still needs the four maintainer wiki pages and sidebar links listed above. No upstream PR has been submitted.

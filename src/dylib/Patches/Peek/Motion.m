@@ -1,6 +1,7 @@
 #import "Patches/Peek/Peek.h"
 
-static const CFTimeInterval DPPeekGrow = 0.20, DPPeekShrink = 0.22;
+const CFTimeInterval DPPeekGrow = 0.20;
+static const CFTimeInterval DPPeekShrink = 0.22;
 static CAMediaTimingFunction *DPPeekEase(void) { return [CAMediaTimingFunction functionWithControlPoints:0.2 :0.9 :0.25 :1]; }
 CAMediaTimingFunction *DPPeekClosingEase(void) { return [CAMediaTimingFunction functionWithControlPoints:0.4 :0 :0.2 :1]; }
 
@@ -21,6 +22,7 @@ static void DPDisplayedState(CALayer *layer, CATransform3D *transform, float *op
 @implementation DPPeekCard (Motion)
 - (void)animateIn {
     NSUInteger version = ++self.motionVersion;
+    self.needsLayout = YES; [self layoutSubtreeIfNeeded];
     BOOL reduce = NSWorkspace.sharedWorkspace.accessibilityDisplayShouldReduceMotion;
     CFTimeInterval duration = reduce ? 0.08 : DPPeekGrow;
     NSMutableArray *animations = [NSMutableArray new];
@@ -36,6 +38,7 @@ static void DPDisplayedState(CALayer *layer, CATransform3D *transform, float *op
     [animations addObject:appear];
     CAAnimationGroup *group = [CAAnimationGroup animation];
     group.animations = animations; group.duration = duration; group.timingFunction = DPPeekEase();
+    self.card.alphaValue = 1;
     [self.card.layer addAnimation:group forKey:@"peek"];
     [self animateBackdrop:YES duration:duration];
     self.controls.alphaValue = 0;

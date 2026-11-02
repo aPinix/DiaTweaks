@@ -40,6 +40,7 @@ DPPeekCard *DPPeekShowCard(NSWindow *window, id<DPPeekPage> page, NSPoint origin
     peek.clickPointInWindow = [window convertPointFromScreen:origin];
     peek.host = host;
     peek.card = DPLayerView();
+    peek.card.alphaValue = 0;
     peek.card.layer.shadowOpacity = 0.35;
     peek.card.layer.shadowRadius = 24;
     peek.card.layer.shadowOffset = CGSizeMake(0, -6);
@@ -50,12 +51,13 @@ DPPeekCard *DPPeekShowCard(NSWindow *window, id<DPPeekPage> page, NSPoint origin
     peek.clip.layer.cornerCurve = kCACornerCurveContinuous;
     peek.clip.layer.masksToBounds = YES;
     peek.controls = DPPeekControls(peek, @selector(control:));
+    peek.controls.alphaValue = 0;
     [peek.clip addSubview:host];
     [peek.card addSubview:peek.clip];
     for (NSView *view in @[peek.card, peek.controls]) [peek addSubview:view];
     // Insert immediately above the content frame, preserving the sidebar's higher native stacking order.
     [surface.superview addSubview:peek positioned:NSWindowAbove relativeTo:surface];
-    [peek layoutSubtreeIfNeeded];
+    peek.needsLayout = YES; [peek layoutSubtreeIfNeeded];
     [page attachToPaneHostView:host];
     [window makeFirstResponder:host];
     if (surface) {
@@ -65,6 +67,6 @@ DPPeekCard *DPPeekShowCard(NSWindow *window, id<DPPeekPage> page, NSPoint origin
                                                                         usingBlock:^(NSNotification *note) { [weak followPane]; }];
     }
     peek.monitor = DPWatchKeys(peek);
-    [peek animateIn];
+    [peek waitForContent];
     return peek;
 }

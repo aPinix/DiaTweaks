@@ -18,6 +18,7 @@ extern DPPatch DPPeek;
 @property (nonatomic, weak) NSView *pane;               // The page area it covers.
 @property (nonatomic, weak) NSView *surface;            // The complete browser frame, including its rounded edge.
 @property (nonatomic, strong) id paneObserver, monitor;
+@property (nonatomic, strong) NSTimer *openingTimer;
 @property (nonatomic) NSPoint clickPointInWindow;  // Survives pointer movement and window repositioning.
 @property (nonatomic) BOOL closing;
 @property (nonatomic) BOOL expanding, backgroundWantsLayer;
@@ -33,6 +34,9 @@ extern DPPatch DPPeek;
 @interface DPPeekCard (Motion)  // Motion.m
 - (void)animateIn;
 - (void)animateOut:(void (^)(void))completion;
+@end
+@interface DPPeekCard (Opening)
+- (void)waitForContent;
 @end
 @interface DPPeekCard (Origin)
 - (NSRect)originFrame;
@@ -65,6 +69,7 @@ void DPPeekLoad(id page, NSURL *url);
 CATransform3D DPPeekSqueeze(NSRect bounds, NSRect target, CGPoint anchor);
 CATransform3D DPPeekDepth(NSRect bounds, CGFloat scale);
 CAMediaTimingFunction *DPPeekClosingEase(void);
+extern const CFTimeInterval DPPeekGrow;
 void DPPeekStartIndicator(DPPeekCard *peek);
 void DPPeekStopIndicator(DPPeekCard *peek);
 void DPPeekRememberClick(NSWindow *window, NSEventModifierFlags flags, NSPoint locationInWindow);

@@ -42,6 +42,7 @@
 
 - (void)stopWatching {
     self.motionVersion++;
+    [self.openingTimer invalidate]; self.openingTimer = nil;
     if (self.monitor) [NSEvent removeMonitor:self.monitor];
     if (self.paneObserver) [NSNotificationCenter.defaultCenter removeObserver:self.paneObserver];
     self.monitor = self.paneObserver = nil;
@@ -53,6 +54,7 @@
 // Keep the same live page in the card until it reaches the destination. Escape can cancel an expansion mid-flight.
 - (void)close:(NSInteger)exit {
     if (self.closing && !(self.expanding && exit == 0)) return;
+    [self.openingTimer invalidate]; self.openingTimer = nil;
     self.closing = YES;
     self.expanding = exit != 0;
     [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
