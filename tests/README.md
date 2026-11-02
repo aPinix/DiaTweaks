@@ -1,5 +1,7 @@
 # Toolbar and restyle performance
 
+For Peek and Dia Mini, run `make test-quick-browse`. It exercises the production AppKit code against stand-ins for Dia’s private interfaces: launcher history and query ordering, profile isolation, the external-link preference, URL restrictions, independent switches, source badges, interrupted animations, Reduce Motion and live-page handoffs. It never installs into Dia. Passing these fixtures does not establish compatibility with a new Dia release; real-browser checks are described in [Peek](../docs/tweaks/Peek.md) and [Dia Mini](../docs/tweaks/Dia-Mini.md).
+
 Run `tests/performance` on macOS with Command Line Tools installed. It builds the same AppKit fixtures against upstream base `9d5a570` and the current sources. An optional first argument selects another baseline commit.
 
 The toolbar fixture checks page fill and restoration, opacity, stacking, reset and resizing, with flipped/unflipped coordinates and bookmarks present/absent. It measures 10,000 steady layouts and 10,000 hover ticks. The restyle fixture installs the real layout/layer/shadow hooks on stand-in views. It checks immediate styling, deferred callback counts, independent containers, later turns, and Chat opening/closing with a requested frame.

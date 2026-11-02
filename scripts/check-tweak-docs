@@ -15,6 +15,15 @@ while [ "$i" -lt "$count" ]; do
     title=$(plutil -extract "patches.$i.title" raw -o - "$manifest")
     # GitHub names a wiki page's file after its title, with spaces as hyphens.
     page=$(echo "$title" | tr ' ' '-')
+    # Fork-specific features can ship their pages in the source tree.
+    if [ -f "docs/tweaks/$page.md" ]; then
+        if ! grep -qF "(docs/tweaks/$page.md)" README.md; then
+            echo "README has no link to docs/tweaks/$page.md" >&2
+            failed=1
+        fi
+        i=$((i + 1))
+        continue
+    fi
     if [ ! -f "$wiki/$page.md" ]; then
         echo "the wiki has no page called \"$title\": add one from docs/tweak-page.md" >&2
         failed=1
@@ -25,5 +34,5 @@ while [ "$i" -lt "$count" ]; do
     fi
     i=$((i + 1))
 done
-[ "$failed" -eq 0 ] && echo "all $count tweaks have a wiki page"
+[ "$failed" -eq 0 ] && echo "all $count tweaks have documentation"
 exit "$failed"

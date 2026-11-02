@@ -15,7 +15,9 @@
 #define DPDiaNewTabPage         "NewTabPage.NewTabPageContentView"
 #define DPDiaShadowView         "_TtC5ARCUI10ShadowView"
 #define DPDiaBrowser            "ArcBrowser"
+#define DPDiaBrowserApplication "ArcBrowserApplication"
 #define DPDiaBrowserDelegate    "_TtC3ADK15ChromiumBrowser"
+#define DPDiaTablessDelegate    "_TtC3ADK28TablessWebContentsUIDelegate"
 #define DPDiaTabGroupProperties "ArcTabGroupProperties"
 #define DPDiaSettingsController "_TtC11Preferences38SidebarPreferencesWindowViewController"
 #define DPDiaSettingsSidebar    "_TtC11Preferences15SidebarListView"
@@ -24,3 +26,7 @@
 #define DPDiaWebContents        "ArcWebContents"
 #define DPDiaWebContentsConfiguration "ArcWebContentsConfiguration"
 #define DPDiaWebContent         "_TtC3ADK18WebContentChromium"  // Dia's delegate for each page. A Swift class: look it up after launch.
+#define DPDiaTabView            "_TtC5TabUI7TabView"
+#define DPDiaFavoriteTab        "_TtC5TabUI15TabDockItemView"
+#define DPDiaFavoriteSelectionSuffix "SelectionOutlineView"
+#define DPDiaHistoryQueryOptions "ArcHistoryQueryOptions"

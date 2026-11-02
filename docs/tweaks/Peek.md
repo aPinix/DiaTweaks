@@ -1,0 +1,27 @@
+# Peek
+
+Preview a link over the current Dia window, using the source tab’s Chromium browser and profile.
+
+Enable **Settings → Patches → Browsing → Peek**, or `diatweaks enable peek`.
+
+- Shift-click a link. A card opens over the page, while the background scales to 97.5% around its center. The sidebar remains usable.
+- Press Escape or ⌘W, use the close button, or click outside the card to dismiss it.
+- Click **Open as Tab** or press ⌘O to expand the card into a regular tab. The existing live page keeps its state and navigation history.
+- Use the split button to animate the preview into Dia’s split view.
+- A favicon badge identifies the source tab: inside the right edge for a row, or overlapping the top-right corner for a pinned tile. It updates as the preview’s favicon loads and disappears when Peek closes.
+
+Only one Peek stays open per source window. It follows that window when moved or resized and closes with it. Turning the patch off closes its previews immediately. It works with both sidebar and top tabs.
+
+## Limits
+
+This is experimental and uses private Objective-C APIs that Dia can change. Missing required classes disable the feature. Only HTTP and HTTPS links are supported; special browser URLs keep their usual behavior. Command-click, Option-click and Command-Shift-click keep their existing behavior.
+
+The implementation builds on [Ryan’s Peek PR #2](https://github.com/JaceThings/DiaTweaks/pull/2). It uses native navigation requests and keeps the live Chromium page during expansion. Popups and website permission prompts need a regular tab. Peek does not automatically intercept normal clicks from pinned tabs.
+
+Reduce Motion uses short opacity transitions instead of scaling or expansion. Opening, closing and expansion start from the currently displayed layer state; Escape can cancel an expansion before the page is transferred.
+
+## Verification
+
+`make test-quick-browse` runs AppKit fixtures without touching Dia. Test real rendering, navigation, link gestures and tab transfer on your installed Dia too; the fixtures replace Dia’s private classes.
+
+For a manual check, try Shift-click, Escape, clicking outside, resizing, expanding and splitting. Check source badges on a tab row and a pinned tile, with both tab layouts. Try expanding while the opening animation is still running, cancel expansion with Escape, and enable Reduce Motion. Also check a private window and a second profile. Turn Peek off while one is open; Dia Mini should remain available.

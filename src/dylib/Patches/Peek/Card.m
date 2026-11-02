@@ -33,25 +33,29 @@
 - (void)scrollWheel:(NSEvent *)event {}
 - (void)control:(NSButton *)sender { [self close:sender.tag]; }
 
-- (BOOL)stopWatching {
-    if (self.closing) return NO;
-    self.closing = YES;
+- (void)stopWatching {
+    self.motionVersion++;
     if (self.monitor) [NSEvent removeMonitor:self.monitor];
     if (self.paneObserver) [NSNotificationCenter.defaultCenter removeObserver:self.paneObserver];
     self.monitor = self.paneObserver = nil;
     self.controls.alphaValue = 0;
-    return YES;
+    [self restoreBackdrop];
+    DPPeekStopIndicator(self);
 }
 
-// Opening it as a tab or in a split goes at once, since the page is about to show up there; closing shrinks it away.
+// Keep the same live page in the card until it reaches the destination. Escape can cancel an expansion mid-flight.
 - (void)close:(NSInteger)exit {
-    if (![self stopWatching]) return;
-    if (exit) [self finish:exit];
+    if (self.closing && !(self.expanding && exit == 0)) return;
+    self.closing = YES;
+    self.expanding = exit != 0;
+    self.controls.alphaValue = 0;
+    if (exit) [self animateExpand:exit completion:^{ [self finish:exit]; }];
     else [self animateOut:^{ [self finish:0]; }];
 }
 
 - (void)handOver {
-    if (![self stopWatching]) return;
+    self.closing = YES;
+    [self stopWatching];
     [self.page detachFromPaneHostView:self.host];
     [self removeFromSuperview];
 }
@@ -60,7 +64,7 @@
 
 DPPeekCard *DPPeekCardIn(NSWindow *window) {
     for (NSView *view in window.contentView.subviews)
-        if ([view isKindOfClass:DPPeekCard.class] && !((DPPeekCard *)view).closing) return (DPPeekCard *)view;
+        if ([view isKindOfClass:DPPeekCard.class]) return (DPPeekCard *)view;
     return nil;
 }
 

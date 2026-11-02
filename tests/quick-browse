@@ -1,0 +1,10 @@
+#!/bin/sh
+# Real AppKit windows with stand-ins for Dia's private interfaces. Never touches Dia or its settings.
+set -eu
+cd "$(dirname "$0")/.."
+mkdir -p build
+clang -arch arm64 -mmacosx-version-min=14.0 -fobjc-arc -O0 -Wall -Wextra -Wno-unused-parameter \
+    -Isrc/dylib -framework AppKit -framework Carbon -framework QuartzCore \
+    tests/quick-browse.m src/dylib/Commands/QuickBrowse/*.m src/dylib/Patches/Peek/*.m \
+    src/dylib/StdPatch/Hook.m src/dylib/StdPatch/Views.m src/dylib/StdPatch/App.m -o build/quick-browse-test
+build/quick-browse-test

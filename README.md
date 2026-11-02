@@ -1,5 +1,12 @@
 # DiaTweaks
 
+This is [aPinix’s fork](https://github.com/aPinix/DiaTweaks) of [JaceThings/DiaTweaks](https://github.com/JaceThings/DiaTweaks), adding experimental **Peek** and **Dia Mini** for macOS. Both are off until you enable them in **Settings → Patches → Browsing**.
+
+- **[Peek](docs/tweaks/Peek.md):** Shift-click a web link to open a card over your current page. The background scales back slightly. Expanding animates the live page into a tab, and the source tab or pin shows its favicon.
+- **[Dia Mini](docs/tweaks/Dia-Mini.md):** Press **Ctrl+Option+Command+N** from any app for a temporary search box with recent results from the current Dia profile. Enter opens a compact browser window; Escape dismisses the launcher.
+
+Both use Dia’s Chromium engine and the source tab’s browser profile. Peek’s **Open as Tab** (⌘O) and Mini’s **Open in Dia** (⌘Return) keep the existing live page. Peek builds on [Ryan’s PR #2](https://github.com/JaceThings/DiaTweaks/pull/2), preserving its split-view support. See the feature pages for current limits and testing instructions.
+
 Small tweaks for [Dia](https://www.diabrowser.com) that stay in place when Dia updates.
 
 Unofficial and not affiliated with The Browser Company. Apple Silicon, macOS 14 or later.
@@ -19,10 +26,14 @@ Turn tweaks on and off in **Dia → Settings → Patches**, or with the `diatwea
 3. Paste this into Terminal:
 
    ```sh
-   git clone https://github.com/JaceThings/DiaTweaks.git ~/DiaTweaks && ~/DiaTweaks/install.sh
+   git clone https://github.com/aPinix/DiaTweaks.git ~/DiaTweaks && ~/DiaTweaks/install.sh
    ```
 
 Dia quits and reopens. If macOS asks about "Dia Safe Storage", enter your password and click **Always Allow**.
+
+Enable the additions with `diatweaks enable peek` and `diatweaks enable diaMini`, or their switches in **Settings → Patches → Browsing**. This fork checks its own releases for updates; it does not replace these additions with an upstream release. Until this fork publishes releases, update an existing checkout with `git pull --ff-only` and rerun `./install.sh`.
+
+Under **Dia Mini**, enable **[Open external links in Dia Mini](docs/tweaks/Open-external-links-in-Dia-Mini.md)** to open web links from other apps in Mini first. It is off by default. Links clicked inside webpages keep their existing behavior.
 
 ## The `diatweaks` command
 
@@ -53,7 +64,7 @@ Dia's own updater is switched off. **Settings → Patches → Software Update** 
 Update once by hand, then use `diatweaks update` from then on:
 
 ```sh
-rm -rf /tmp/DiaTweaks && git clone --depth 1 https://github.com/JaceThings/DiaTweaks.git /tmp/DiaTweaks && /tmp/DiaTweaks/install.sh
+rm -rf /tmp/DiaTweaks && git clone --depth 1 https://github.com/aPinix/DiaTweaks.git /tmp/DiaTweaks && /tmp/DiaTweaks/install.sh
 ```
 
 </details>
@@ -63,7 +74,7 @@ rm -rf /tmp/DiaTweaks && git clone --depth 1 https://github.com/JaceThings/DiaTw
 <details>
 <summary><strong>Is it safe?</strong></summary>
 
-Yes. It's built on your Mac from this code. It only changes how Dia looks, and never reads your pages, history or passwords.
+It's built on your Mac from this code. Appearance tweaks change Dia’s views. Peek and Mini open native Chromium pages in the source profile; Mini reads that profile’s history for recent results and uses Dia’s native autocomplete for suggestions. Mini’s own fallback recent list stays in memory.
 
 </details>
 
@@ -84,7 +95,7 @@ The tweaked Dia is signed by you instead of The Browser Company, so macOS checks
 <details>
 <summary><strong>Does it run in the background?</strong></summary>
 
-No. It only does anything while Dia is open.
+It only does anything while Dia is running. Mini’s global shortcut works while another app is active; it does not need a separate background service.
 
 </details>
 

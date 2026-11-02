@@ -6,6 +6,9 @@
 // opens, so nothing reloads. Closing the Peek discards it. Until then Dia doesn't manage the page, so popups and
 // permission prompts from inside a Peek wait until it's expanded.
 static NSMapTable *DPPeekFactories;  // Each page -> the browser context or browser that made it.
+static NSMapTable *DPPeekHosts;
+
+NSWindow *DPPeekWindowForPage(id page) { return ((NSView *)[DPPeekHosts objectForKey:page]).window; }
 
 static id DPContext_create(id self, SEL _cmd, id configuration) {
     id page = DPCallOriginal(DPContext_create, self, configuration);
@@ -19,6 +22,15 @@ static id DPBrowser_create(id self, SEL _cmd, id configuration) {
     return page;
 }
 
+static void DPPeek_restored(id self, SEL _cmd, id browser, id page, id session) {
+    if (browser && page) [DPPeekFactories setObject:browser forKey:page];
+    DPCallOriginal(DPPeek_restored, self, browser, page, session);
+}
+static void DPPeek_created(id self, SEL _cmd, id browser, id page, BOOL active) {
+    if (browser && page) [DPPeekFactories setObject:browser forKey:page];
+    DPCallOriginal(DPPeek_created, self, browser, page, active);
+}
+
 // Dia attaching a Peek's page somewhere else, such as when it's selected, means the card has to let go of it, or
 // Dia's own pane stays white.
 static void DPPage_attach(id self, SEL _cmd, NSView *host) {
@@ -26,10 +38,15 @@ static void DPPage_attach(id self, SEL _cmd, NSView *host) {
         DPPeekCard *peek = DPPeekCardIn(window);
         if (peek.page == self && host != peek.host) [peek handOver];
     }
+    if (host) [DPPeekHosts setObject:host forKey:self];
     DPCallOriginal(DPPage_attach, self, host);
 }
 
 BOOL DPPeekCanOpen(id source) { return source && [DPPeekFactories objectForKey:source]; }
+BOOL DPPeekCanLoad(NSURL *url) {
+    if (![url isKindOfClass:NSURL.class] || !url.host.length) return NO;
+    return [@[@"http", @"https"] containsObject:url.scheme.lowercaseString];
+}
 
 BOOL DPPeekShows(id page) {
     if (!page) return NO;
@@ -55,7 +72,7 @@ static BOOL DPPeekGive(id page, id delegate, id source, NSURL *url, NSInteger di
 void DPPeekOpen(NSWindow *window, NSURL *url, NSPoint origin, id delegate, id source) {
     id factory = source ? [DPPeekFactories objectForKey:source] : nil;
     Class configuration = objc_getClass(DPDiaWebContentsConfiguration);
-    if (!window || !url || !factory || !configuration || DPPeekCardIn(window)) return;
+    if (!window || !DPPeekCanLoad(url) || !factory || !configuration || DPPeekCardIn(window)) return;
     id page = ((id (*)(id, SEL, id))objc_msgSend)(factory, @selector(createWebContents:), [configuration new]);
     if (!page) return;
     if ([page respondsToSelector:@selector(bootstrapRendering)]) [page performSelector:@selector(bootstrapRendering)];
@@ -68,12 +85,14 @@ void DPPeekOpen(NSWindow *window, NSURL *url, NSPoint origin, id delegate, id so
     }
     peek.sourceDelegate = delegate;
     peek.source = source;
+    DPPeekStartIndicator(peek);
 }
 
 @implementation DPPeekCard (Handoff)
 
 // 0 discards the page, 1 hands it to Dia as a new tab, 2 as a split view pane. It carries on exactly where it was.
 - (void)finish:(NSInteger)exit {
+    [self stopWatching];
     NSWindow *window = self.window;
     NSObject *page = (NSObject *)self.page;
     [self.page detachFromPaneHostView:self.host];
@@ -88,8 +107,11 @@ void DPPeekOpen(NSWindow *window, NSURL *url, NSPoint origin, id delegate, id so
 
 void DPPeekInstallPages(void) {
     DPPeekFactories = [NSMapTable weakToWeakObjectsMapTable];
+    DPPeekHosts = [NSMapTable weakToWeakObjectsMapTable];
     DPHook(DPDiaBrowserContext, @selector(createWebContents:), (IMP)DPContext_create);
     DPHook(DPDiaBrowser, @selector(createWebContents:), (IMP)DPBrowser_create);
+    DPHook(DPDiaBrowserDelegate, @selector(browser:didRestoreWebContents:withSessionId:), (IMP)DPPeek_restored);
+    DPHook(DPDiaBrowserDelegate, @selector(browser:didCreateNewWebContents:isActive:), (IMP)DPPeek_created);
     DPHook(DPDiaWebContents, @selector(attachToPaneHostView:), (IMP)DPPage_attach);
     // A Peek can't outlast the window it's in.
     [NSNotificationCenter.defaultCenter addObserverForName:NSWindowWillCloseNotification object:nil queue:nil usingBlock:^(NSNotification *note) {

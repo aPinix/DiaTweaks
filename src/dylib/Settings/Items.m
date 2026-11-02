@@ -23,6 +23,8 @@ NSString *DPWhyHidden(DPPatch *patch) { return patch->on ? DPWhyHiddenBy(DPPatch
 
 NSURL *DPWikiURL(DPPatch *patch) {
     NSString *page = [patch->title stringByReplacingOccurrencesOfString:@" " withString:@"-"];
+    if ([@[@"peek", @"diaMini", @"diaMiniExternalLinks"] containsObject:patch->key])
+        return [NSURL URLWithString:[NSString stringWithFormat:@"https://github.com/aPinix/DiaTweaks/blob/main/docs/tweaks/%@.md", page]];
     return [NSURL URLWithString:[@"https://github.com/JaceThings/DiaTweaks/wiki/" stringByAppendingString:page]];
 }
 

@@ -9,7 +9,7 @@ build/diapatch: $(wildcard src/diapatch/*.[hm]) | build
 	clang $(CFLAGS) -framework AppKit -framework CoreGraphics -framework Security -o $@ $(filter %.m,$^)
 
 build/DiaPatches.dylib: $(DYLIB_SOURCES) $(wildcard $(PASSKEYS)/*) | build
-	clang $(CFLAGS) -Isrc/dylib -dynamiclib $(EXTENSION) -framework AppKit -framework QuartzCore -framework AVFoundation -framework VideoToolbox -framework CoreMedia -framework CoreVideo -o $@ $(filter %.m,$^)
+	clang $(CFLAGS) -Isrc/dylib -dynamiclib $(EXTENSION) -framework AppKit -framework Carbon -framework QuartzCore -framework AVFoundation -framework VideoToolbox -framework CoreMedia -framework CoreVideo -o $@ $(filter %.m,$^)
 
 # The patch list for diatweaks. With DIAPATCH_MANIFEST set, the dylib writes it and exits as it loads, so diapatch never runs.
 build/patches.json: build/DiaPatches.dylib build/diapatch
@@ -21,6 +21,9 @@ build:
 test: build/DiaPatches.dylib
 	./test.sh
 
+test-quick-browse:
+	./tests/quick-browse
+
 # make patch NAME=HideFooButton starts a new patch in src/dylib/Patches/HideFooButton.
 patch:
 	@scripts/new-patch "$(NAME)"
@@ -28,4 +31,4 @@ patch:
 clean:
 	rm -rf build
 
-.PHONY: all clean test patch
+.PHONY: all clean test test-quick-browse patch
