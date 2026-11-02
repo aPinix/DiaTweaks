@@ -6,9 +6,10 @@ Tested on Dia 1.56.0 (89901), macOS 27.2, Apple Silicon, on 2 November 2026.
 
 - `make`: CLI, dylib and 18-entry patch manifest build without compiler warnings.
 - `make test-quick-browse`: passes AppKit fixtures using the production Peek and Mini code, with stand-ins for Dia's private classes.
+- `make test`: the final installed build passes all 34 scenarios with sidebar tabs (`vertical`) and all 34 with top tabs (`horizontal`), with no unavailable patches or safe mode. Reports are saved locally as `build/test-sidebar.json` and `build/test-top.json`.
 - `scripts/check-tweak-docs`: the unchanged upstream gate reports missing wiki pages/sidebar entries for Peek, Dia Mini and Open external links in Dia Mini. The local notes do not satisfy that gate; the guide assigns those wiki pages and preview media to the upstream maintainer before merge.
 
-The fixtures cover Mini history and profile isolation, stale autocomplete callbacks, selection after favicon updates, launcher placement on a secondary display, external-link preference on/off, preserving non-web URLs, native page handoff with and without a source webpage, and turning Mini off independently. Peek checks cover modifier handling, special links, opening and expansion timing, interrupted transitions, row and pinned badges, and Reduce Motion. The favicon regression checks confirm a separate close-button slot, the original button action, title space with/without hover, repeated layouts, narrower rows and restoration of the full row width after dismissal.
+The fixtures cover Mini history and profile isolation, stale autocomplete callbacks, selection after favicon updates, launcher placement on a secondary display, external-link preference on/off, preserving non-web URLs, native page handoff with and without a source webpage, and turning Mini off independently. Peek checks cover modifier handling, special links, opening and expansion timing, interrupted transitions, row and pinned badges, and Reduce Motion. The favicon regression checks confirm a separate close-button slot, the original button action, title space with/without hover, repeated layouts, narrower rows and restoration of the full row width after dismissal. Additional checks cover fading the complete browser frame without a painted overlay, a revealed sidebar receiving clicks above Peek, vector symbols sharing their circle's center, and hover growth fitting inside each button area.
 
 ## Real Dia checks
 
@@ -27,6 +28,17 @@ After the user's installation approval, ran `DIAPATCH_NO_RELAUNCH=1 ./install.sh
 
 The optional Rust `diatweaks` command was skipped because Rust is unavailable on this Mac. The installed patcher and Settings controls work independently of that optional command.
 
+The final Peek changes were built, installed and checked in this existing Dia installation:
+
+- Peek opens in both layouts. The whole browser-content frame, including its rounded edge, scales back and fades while its contents stay sharp.
+- The regular source row has a padded favicon tile; a pinned source displays the corner badge.
+- All three controls render complete circles with centered vector symbols. Pointer presses dismiss and expand the preview. Expansion leaves the live page in a regular tab; the temporary test tab was then closed.
+- Changing between sidebar and top tabs while Peek is open resizes the card with the content frame. The user's sidebar layout was restored and saved with a normal quit, then Dia was reopened without test mode.
+
+## Local proof
+
+`build/proof/vertical-peek-final.mp4` records the final controls, opening, dismissal and expansion. `build/proof/horizontal-peek-final.mp4` records Peek with top tabs. Both are silent H.264 videos at 1120×700 and 60 fps, encoded with the guide's settings. `build/proof/peek-controls-final.png` shows the native controls at their actual rendered size. Earlier recordings and the user's supplied screenshots document the previous appearance. These local artifacts are ignored by Git; review recordings before attaching them to an upstream PR.
+
 ## Remaining manual coverage
 
-The fixtures replace private classes; they do not prove compatibility with every Dia version. `make test` in both layouts, final native favicon spacing/close interaction, real top-tab layout, private windows, a second profile, external links through the OS default-browser route and website permission prompts still need manual coverage. The native checks currently await a brief period without simultaneous browser interaction. No animation recording has been captured. Do not mark the PR template's proof/layout checklist complete until those checks and recordings exist.
+The fixtures replace private classes; they do not prove compatibility with every Dia version. Native edge-hover sidebar reveal, the close-button hover beside a regular row badge, private windows, a second profile, external links through the OS default-browser route and website permission prompts still need manual coverage. Sidebar stacking and close-button spacing have fixture coverage, but those fixtures are not a substitute for the remaining pointer-driven checks. The missing upstream wiki pages and previews still require a maintainer before merge. No upstream PR has been submitted.
