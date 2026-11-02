@@ -4,7 +4,8 @@ A compact native Chromium window for quick browsing, using the source tab’s pr
 
 Enable **Settings → Patches → Browsing → Dia Mini**, or `diatweaks enable diaMini`.
 
-- Press **Ctrl+Option+Command+N** (⌃⌥⌘N) from any app, while Dia is running. **File → New Dia Mini** opens the same temporary search box.
+- Press **Option+Command+N** (⌥⌘N) from any app, while Dia is running. **File → New Dia Mini** opens the same temporary search box.
+- In **Settings → Patches → Dia Mini**, click the shortcut beside **Keyboard shortcut** and press a new combination with Command, Control or Option. Release the key to save it. Escape, clicking elsewhere or leaving the page cancels recording. **Reset** restores ⌥⌘N. Changes apply immediately and survive restarting Dia; the File menu shows the chosen combination.
 - The search box opens at the top-right of the screen under the pointer, inset from the menu bar and screen edge. It keeps that corner as results appear.
 - Recent results come from the current Dia profile’s history. Start typing for native browser suggestions, use ↑/↓ to select, and press Enter to open the result in a compact Mini window.
 - Escape or a click outside dismisses the search box. Closing it leaves the page you were working on in place.
@@ -20,7 +21,7 @@ Mini and Peek have independent switches. Mini is a separate, resizable window, r
 
 This is experimental and depends on Dia’s private native APIs. It is a compact browsing surface, without Dia’s Chat, sidebar or extension toolbar. Use **Open in Dia** for those features and website permission dialogs.
 
-Dia must be running for its global shortcut to work. If another app already owns that shortcut, the File menu command remains available. With no browser window available, Mini asks Dia to prepare a temporary background source window. The source is removed when no Mini needs it, unless you promote a page into it.
+Dia must be running for its global shortcut to work. The recorder rejects conflicting Dia menu shortcuts and reports global registration failures without saving the rejected choice. macOS may intercept reserved system shortcuts before they reach the recorder. The File menu command remains available. With no browser window available, Mini asks Dia to prepare a temporary background source window. The source is removed when no Mini needs it, unless you promote a page into it.
 
 Mini uses the current source profile, including its private browsing context; it does not choose profiles for you. Native history supplies recents; Mini’s additional fallback list stays in memory and is scoped to its source factory. Keep the source tab available when moving a Mini page into a regular tab.
 

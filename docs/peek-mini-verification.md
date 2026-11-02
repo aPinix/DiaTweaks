@@ -19,7 +19,7 @@ Initial checks used an isolated copy of the official Dia app with a separate Chr
 - Source row and pinned tile display the destination favicon.
 - Mini displays profile history and favicons. Typing produces Dia's native suggestions; Enter opens the selected real page. Escape dismisses the launcher.
 - Open in Dia transfers the live page into a selected tab. Starting in a new empty browser window also promotes into that window.
-- The user confirmed that Ctrl+Option+Command+N opens Mini while another app is active.
+- The user confirmed that Mini's global shortcut works while another app is active. Its current default is Option+Command+N and can be changed on Mini's Patches page.
 - The launcher's top-right placement was visually confirmed on the active display with two displays connected. Its top and right edges stay fixed as the list grows from four recent pages to six suggestions. Secondary-display geometry is also covered by the fixture.
 
 ## Existing Dia installation
@@ -48,3 +48,14 @@ The fixtures replace private classes; they do not prove compatibility with every
 The follow-up build also passes `make`, `make test-quick-browse`, and all 34 native scenarios in each layout. Its reports are `build/test-sidebar-seam.json` and `build/test-top-seam.json`. The new fixture cases check physical pixel alignment at odd and fractional widths, a one-pixel margin beneath the clip, transparent backing, and keeping the live page attached through a gentle dismissal. A close before the first display tick now uses the opening seed rather than jumping to the full-size model.
 
 Native window captures of the yellow Dia page check the straight right edge in both layouts: `build/proof/peek-seam-sidebar-window.png` and `build/proof/peek-seam-top-window.png`. `build/proof/peek-seam-close-before.mp4` preserves the earlier collapse animation; `build/proof/peek-seam-close-after.mp4` records the new close and reopening. The encoded recordings use the contribution guide's 1120×700, 60 fps H.264 settings. All proof remains local and ignored by Git.
+
+## Configurable Mini shortcut
+
+The default is now Option+Command+N. The Mini detail page includes a shortcut recorder and Reset button. Settings changes update the global registration and File menu together. Recording pauses Mini's binding and saves after key release; Escape, focus loss or leaving the page cancels it. Rejected registrations and failed preference writes retain the previous choice.
+
+- `make` builds without compiler warnings. `make test-quick-browse` passes the original fixtures plus shortcut tests for defaults, capture, cancellation, reset, menu/global conflicts, malformed preferences, disabled Mini, write rollback, and persistence read by a separate process. Shortcut fixtures use an isolated preferences domain and fake global registrations.
+- The final native build passes all 34 scenarios with sidebar tabs and all 34 with top tabs. Reports are `build/test-sidebar-mini-shortcut.json` and `build/test-top-mini-shortcut.json`.
+- Recorded Control+Option+Command+M in the actual settings control, quit Dia normally and reopened it. The control retained that combination and Mini opened with it. The user then confirmed that it also opened Mini from another app. Reset restored Option+Command+N afterward.
+- `build/proof/mini-shortcut-settings-custom.png` shows the persisted custom binding, and `build/proof/mini-shortcut-settings-default.png` shows the final default. Both are native settings-window captures kept local and ignored by Git.
+
+The unchanged documentation gate still reports the three missing upstream wiki pages and sidebar links listed above; no new patch key or wiki page is introduced by this update.

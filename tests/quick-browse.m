@@ -3,6 +3,7 @@
 #import "Patches/Peek/Indicator.h"
 #import "Patches/Peek/Button.h"
 #import "Patches/DiaMini/Browse/Launcher.h"
+#import "mini-shortcuts.h"
 
 DPPatch DPDiaMini = {.on = YES};
 DPPatch DPDiaMiniExternal;
@@ -187,6 +188,9 @@ static DPBrowseWindow *mini(void) { return DPBrowseWindows.anyObject; }
 int main(void) {
     @autoreleasepool {
         [NSApplication sharedApplication];
+        NSString *shortcutDomain = [@"com.diapatches.shortcut-fixture." stringByAppendingString:NSUUID.UUID.UUIDString];
+        setenv("DIATWEAKS_DOMAIN", shortcutDomain.UTF8String, 1);
+        alias(DPFixtureShortcutPage.class,"DPPageView");
         alias(FixtureContents.class,DPDiaWebContents); alias(FixtureBrowser.class,DPDiaBrowser);
         alias(FixtureBrowserApplication.class,DPDiaBrowserApplication);
         alias(FixtureBrowser.class,DPDiaBrowserContext); alias(FixtureConfig.class,DPDiaWebContentsConfiguration);
@@ -207,6 +211,7 @@ int main(void) {
         [NSNotificationCenter.defaultCenter postNotificationName:NSApplicationDidFinishLaunchingNotification object:NSApp];
         DPDiaMini.on=YES;
         NSCAssert(file.submenu.numberOfItems == 1 && DPBrowseCompatible(),@"one Mini menu and supported native APIs");
+        DPTestMiniShortcuts();
 
         for (NSString *bad in @[@"javascript:alert(1)",@"data:text/html,x",@"file:///tmp/x",@"dia://settings",@"ftp://example.com",@""])
             NSCAssert(!DPBrowseURL(bad) && !DPBrowseAddress(bad),@"reject unsafe or unsupported navigation %@",bad);
@@ -270,7 +275,7 @@ int main(void) {
         DPBrowseShowLauncher(); launcher=DPCurrentMiniLauncher;
         [launcher control:launcher.search textView:[NSTextView new] doCommandBySelector:@selector(cancelOperation:)];
         NSCAssert(!DPCurrentMiniLauncher,@"Escape dismisses temporary search");
-        NSCAssert(DPNewMiniItem.keyEquivalentModifierMask==(NSEventModifierFlagControl|NSEventModifierFlagOption|NSEventModifierFlagCommand),@"requested global chord advertised");
+        NSCAssert(DPNewMiniItem.keyEquivalentModifierMask==(NSEventModifierFlagOption|NSEventModifierFlagCommand),@"default global chord advertised");
         DPDiaMiniExternal.on=NO; [applicationDelegate application:NSApp openURLs:@[url]];
         NSCAssert(applicationDelegate.received.count==1 && !DPBrowseWindows.count,@"external-link preference off preserves normal opening");
         DPDiaMiniExternal.on=YES;
@@ -430,6 +435,7 @@ int main(void) {
         [peek close:0]; drain(0.15);
         NSCAssert(!DPPeekCardIn(window),@"reduced-motion cleanup");
         [window close];
+        [NSUserDefaults.standardUserDefaults removePersistentDomainForName:shortcutDomain];
         puts("PASS: Mini launcher, profile history, query ordering, external-link preference and handoff; Peek motion, interruption, badges and Reduce Motion");
     }
 }

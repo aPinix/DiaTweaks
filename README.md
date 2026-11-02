@@ -3,7 +3,7 @@
 This is [aPinix’s fork](https://github.com/aPinix/DiaTweaks) of [JaceThings/DiaTweaks](https://github.com/JaceThings/DiaTweaks), adding experimental **Peek** and **Dia Mini** for macOS. Both are off until you enable them in **Settings → Patches → Browsing**.
 
 - **[Peek](docs/tweaks/Peek.md):** Shift-click a web link to open a card over your current page. The background scales back slightly. Expanding animates the live page into a tab, and the source tab or pin shows its favicon.
-- **[Dia Mini](docs/tweaks/Dia-Mini.md):** Press **Ctrl+Option+Command+N** from any app for a temporary search box with recent results from the current Dia profile. Enter opens a compact browser window; Escape dismisses the launcher.
+- **[Dia Mini](docs/tweaks/Dia-Mini.md):** Press **Option+Command+N** from any app for a temporary search box with recent results from the current Dia profile. Change the shortcut in Dia Mini’s Patches settings. Enter opens a compact browser window; Escape dismisses the launcher.
 
 Both use Dia’s Chromium engine and the source tab’s browser profile. Peek’s **Open as Tab** (⌘O) and Mini’s **Open in Dia** (⌘Return) keep the existing live page. Peek builds on [Ryan’s PR #2](https://github.com/JaceThings/DiaTweaks/pull/2), preserving its split-view support. See the feature pages for current limits and testing instructions.
 

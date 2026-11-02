@@ -1,5 +1,6 @@
 #import "QuickBrowse.h"
 #import "Launcher.h"
+#import "../Shortcuts/Shortcut.h"
 
 NSMutableSet<DPBrowseWindow *> *DPBrowseWindows;
 NSMenuItem *DPNewMiniItem;
@@ -44,6 +45,11 @@ void DPBrowseApply(DPPatch *patch) {
 NSString *DPBrowseVerify(DPPatch *patch) {
     if (patch->on && !DPBrowseCompatible()) return @"Dia’s native preview APIs are unavailable";
     if (patch == &DPDiaMini && DPNewMiniItem.hidden == patch->on) return @"the Dia Mini menu does not match its switch";
+    if (!patch->on && DPBrowseHotkeyRegistered()) return @"a disabled Mini still owns its shortcut";
+    for (NSView *page in DPFindViews("DPPageView")) {
+        BOOL mini = DPFindView(page, ^BOOL(NSView *v) { return [v isKindOfClass:NSSwitch.class] && DPHasLabel(v, @"Dia Mini"); }) != nil;
+        if (mini && !DPFindView(page, ^BOOL(NSView *v) { return [v isKindOfClass:DPMiniShortcutRecorder.class]; })) return @"the shortcut control is missing";
+    }
     for (DPBrowseWindow *preview in DPBrowseWindows) {
         if (!patch->on) return @"a disabled preview is still open";
         if (!preview.host.window || preview.host.window != preview.window) return @"the native page is detached";
@@ -60,15 +66,13 @@ void DPInstallQuickBrowse(void) {
             DPDiaMini.on = NO;
             return (void)NSLog(@"DiaPatches: native previews unavailable on this Dia version");
         }
-        DPBrowseInstallBrowsers(); DPBrowseInstallTracking();
+        DPBrowseInstallBrowsers(); DPBrowseInstallTracking(); DPBrowseInstallShortcutSettings();
         DPBrowseInstallCallbacks();
         DPBrowseInstallExternal();
         DPOnLaunch(^{
             DPNewMiniItem = DPAddMenuItem(@"File", @"New Dia Mini", ^{
                 DPBrowseShowLauncher();
             });
-            DPNewMiniItem.keyEquivalent = @"n";
-            DPNewMiniItem.keyEquivalentModifierMask = NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagControl;
             DPNewMiniItem.hidden = !DPDiaMini.on;
             DPBrowseInstallEvents();
             DPBrowseInstallExternal();
