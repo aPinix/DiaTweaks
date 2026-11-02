@@ -13,7 +13,7 @@
 }
 - (void)enterSiteSearch {
     if (!self.siteCandidate || self.siteProvider) return;
-    self.siteExitText = self.siteCompletion ?: self.search.stringValue;
+    self.siteExitText = [self prepareInputQuery];
     self.siteProvider = self.siteCandidate; self.siteCandidate = nil;
     self.search.stringValue = @"";
     NSTextView *editor = (id)self.search.currentEditor;
@@ -25,6 +25,8 @@
     if (!keyword) return;
     self.siteProvider = nil; self.search.stringValue = keyword;
     self.siteExitText = nil;
+    self.typedQuery = keyword; self.inputPreview = nil; self.rowPreviewing = NO;
+    self.suppressInlineCompletion = self.inputWasDeleted = YES;
     [self.window makeFirstResponder:self.search];
     NSTextView *editor = (id)self.search.currentEditor;
     if ([editor isKindOfClass:NSTextView.class]) { editor.string = keyword; editor.selectedRange = NSMakeRange(keyword.length, 0); }

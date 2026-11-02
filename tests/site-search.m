@@ -200,7 +200,8 @@ static void DPTestSiteInput(DPBrowseSource *source, DPSiteFixtureBrowser *browse
         @"accepting the completed site address navigates there instead of searching for its incomplete prefix");
     NSCAssert([launcher control:launcher.search textView:editor doCommandBySelector:@selector(insertTab:)]
         && launcher.siteProvider && !launcher.siteBadge.hidden && launcher.sitePrompt.hidden
-        && !launcher.search.stringValue.length, @"Tab enters the visible provider scope and clears its query");
+        && !launcher.search.stringValue.length && [launcher.siteExitText isEqual:@"you"],
+        @"Tab enters the provider scope while remembering the typed prefix separately from its completion");
     NSCAssert(NSMaxX(launcher.siteBadge.frame) < NSMinX(launcher.search.frame), @"the provider badge leaves the editable query unobstructed");
     browser.deferAutocomplete = YES; DPSiteSetText(launcher, @"stale"); [launcher query];
     void (^stale)(id) = browser.pendingCompletion;
@@ -208,7 +209,14 @@ static void DPTestSiteInput(DPBrowseSource *source, DPSiteFixtureBrowser *browse
     browser.deferAutocomplete = NO;
     DPSiteSetText(launcher, @"");
     NSCAssert([launcher control:launcher.search textView:editor doCommandBySelector:@selector(deleteBackward:)]
-        && !launcher.siteProvider && [launcher.search.stringValue isEqual:@"youtube.com"], @"Backspace on an empty scoped query restores the provider address");
+        && !launcher.siteProvider && [launcher.search.stringValue isEqual:@"you"]
+        && [launcher.typedQuery isEqual:@"you"] && [launcher shouldPreventInlineCompletion]
+        && NSEqualRanges(editor.selectedRange, NSMakeRange(3, 0)),
+        @"Backspace on an empty scoped query restores exactly the typed prefix with its caret at the end");
+    DPBrowseSuggestion *completion = DPHistoryItem([NSURL URLWithString:@"https://youtube.com/"], @"YouTube");
+    completion.fillIntoEdit = @"youtube.com"; completion.inlineAutocompleteText = @"tube.com"; completion.allowedToBeDefaultMatch = YES;
+    [launcher setResults:@[completion]];
+    NSCAssert([launcher.search.stringValue isEqual:@"you"], @"later results cannot autocomplete over the restored prefix");
     NSUInteger generation = launcher.generation;
     DPSiteSearchProvider *provider = DPSiteSearchProviderForInput(source, @"youtube.com");
     stale(@[DPHistoryItem([provider URLForQuery:@"stale result"], @"Stale")]);
@@ -217,6 +225,15 @@ static void DPTestSiteInput(DPBrowseSource *source, DPSiteFixtureBrowser *browse
     DPSiteDrainUntil(^BOOL { return delivered; });
     NSCAssert(!launcher.siteProvider && launcher.generation == generation && !DPHasQuery(launcher.suggestions, @"stale result"),
         @"late scoped callbacks cannot replace the normal results after leaving site search");
+    for (NSString *input in @[@"You", @"youtube.com"]) {
+        DPSiteSetText(launcher, input); [launcher userInputDidChange]; [launcher query];
+        [launcher enterSiteSearch]; [launcher leaveSiteSearch];
+        NSCAssert([launcher.search.stringValue isEqual:input] && [launcher.typedQuery isEqual:input],
+            @"badge exit also restores the original casing or explicitly typed full address");
+    }
+    DPSiteSetText(launcher, @"yout"); [launcher userInputDidChange]; [launcher query];
+    NSCAssert([launcher.search.stringValue isEqual:@"youtube.com"] && ![launcher shouldPreventInlineCompletion],
+        @"new typing enables normal completion again after leaving site search");
     [launcher close];
 }
 
