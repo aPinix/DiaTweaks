@@ -3,11 +3,6 @@
 static char DPIndicatorKey;
 
 // Decorations do not take the tab's click or drag target away.
-@interface DPPeekBadge : NSImageView
-@end
-@implementation DPPeekBadge
-- (NSView *)hitTest:(NSPoint)point { return nil; }
-@end
 @interface DPPeekOutline : NSView
 @end
 @implementation DPPeekOutline
@@ -40,9 +35,10 @@ static char DPIndicatorKey;
     DPPeekReserveTabSpace(reserved);
     self.badge.hidden = hidden; self.outline.hidden = hidden || !tile;
     self.badge.frame = DPPeekIndicatorFrame(row, tile, root.flipped);
+    [self.badge layoutForTile:tile];
     self.outline.frame = NSInsetRect(row, 1, 1);
     id icon = [(NSObject *)peek.page valueForKey:@"favicon"];
-    self.badge.image = [icon isKindOfClass:NSImage.class] ? icon : [NSImage imageWithSystemSymbolName:@"globe" accessibilityDescription:nil];
+    self.badge.icon.image = [icon isKindOfClass:NSImage.class] ? icon : [NSImage imageWithSystemSymbolName:@"globe" accessibilityDescription:nil];
     // Move above newly laid out sidebar children without participating in their layout.
     if (self.badge.superview != root) { [root addSubview:self.outline]; [root addSubview:self.badge]; }
 }
@@ -60,12 +56,7 @@ void DPPeekStartIndicator(DPPeekCard *peek) {
         NSRect bounds = [root convertRect:view.bounds fromView:view];
         if (fabs(NSWidth(bounds) - NSWidth(frame)) < 4 && fabs(NSHeight(bounds) - NSHeight(frame)) < 4) { state.row = view; break; }
     }
-    state.badge = [DPPeekBadge new]; state.badge.wantsLayer = YES;
-    state.badge.imageScaling = NSImageScaleProportionallyDown;
-    state.badge.accessibilityLabel = @"Peek open";
-    state.badge.layer.backgroundColor = NSColor.controlBackgroundColor.CGColor;
-    state.badge.layer.cornerRadius = 4;
-    state.badge.layer.shadowOpacity = 0.18; state.badge.layer.shadowRadius = 2;
+    state.badge = [DPPeekBadge new];
     state.outline = [DPPeekOutline new]; state.outline.wantsLayer = YES;
     state.outline.layer.cornerRadius = 11; state.outline.layer.borderWidth = 1.5;
     state.outline.layer.borderColor = NSColor.controlAccentColor.CGColor;

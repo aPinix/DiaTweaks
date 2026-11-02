@@ -10,12 +10,13 @@ extern DPPatch DPPeek;
 - (void)detachFromPaneHostView:(NSView *)host;
 @end
 
-// A Peek: a card over a window's page area with the page in it, the page behind blurred. Card.m.
+// A live card above a scaled, faded browser-content frame, below Dia's sidebar.
 @interface DPPeekCard : NSView
-@property (nonatomic, strong) NSView *blur, *card, *clip, *host, *controls;
+@property (nonatomic, strong) NSView *card, *clip, *host, *controls;
 @property (nonatomic, strong) id<DPPeekPage> page;
 @property (nonatomic, weak) id sourceDelegate, source;  // The page it was opened from, and Dia's delegate for that page.
 @property (nonatomic, weak) NSView *pane;               // The page area it covers.
+@property (nonatomic, weak) NSView *surface;            // The complete browser frame, including its rounded edge.
 @property (nonatomic, strong) id paneObserver, monitor;
 @property (nonatomic) NSRect link;  // What it grows out of and shrinks back into, in its own coordinates.
 @property (nonatomic) BOOL closing;

@@ -1,30 +1,32 @@
 #import "Patches/Peek/Peek.h"
 
-// The card sits over the window's page area only, so the sidebar stays sharp and usable, as in Arc. It's a child of
-// the window's own root view: replacing the root clears the controller Dia relies on.
+// Peek is immediately above the browser frame. Dia's transient sidebar remains above both.
 @implementation DPPeekCard
 
 - (BOOL)isFlipped { return YES; }
 - (BOOL)acceptsFirstMouse:(NSEvent *)event { return YES; }
 
 // Arc's card is nearly full height and inset at the sides, with the controls in the right margin.
-- (NSRect)cardFrame { return NSInsetRect(self.bounds, NSWidth(self.bounds) * 0.09, MAX(10, NSHeight(self.bounds) * 0.012)); }
+- (NSRect)cardFrame {
+    CGFloat inset = MIN(MAX(54, NSWidth(self.bounds) * 0.10), NSWidth(self.bounds) / 4);
+    return NSInsetRect(self.bounds, inset, MAX(10, NSHeight(self.bounds) * 0.012));
+}
 
 - (void)layout {
     [super layout];
-    self.blur.frame = self.bounds;
     self.card.frame = self.cardFrame;
     self.clip.frame = self.card.bounds;
     self.host.frame = self.clip.bounds;
     NSSize size = self.controls.frame.size;
-    self.controls.frame = (NSRect){{NSMaxX(self.card.frame) + 12, NSMinY(self.card.frame)}, size};
+    self.controls.frame = (NSRect){{MIN(NSMaxX(self.card.frame) + 6, NSWidth(self.bounds) - size.width - 5), NSMinY(self.card.frame) + 2}, size};
 }
 
 // Follows the page area as the sidebar opens and closes.
 - (void)followPane {
-    NSView *pane = self.pane, *root = self.superview;
-    if (!pane.window || !root) return;
-    NSRect frame = [root convertRect:pane.bounds fromView:pane];
+    NSView *surface = self.surface, *root = surface.superview;
+    if (!surface.window || !root) return;
+    if (self.superview != root) { [self removeFromSuperview]; [root addSubview:self positioned:NSWindowAbove relativeTo:surface]; }
+    NSRect frame = [root convertRect:surface.bounds fromView:surface];
     if (!NSEqualRects(frame, self.frame)) self.frame = frame;
 }
 
@@ -63,7 +65,5 @@
 @end
 
 DPPeekCard *DPPeekCardIn(NSWindow *window) {
-    for (NSView *view in window.contentView.subviews)
-        if ([view isKindOfClass:DPPeekCard.class]) return (DPPeekCard *)view;
-    return nil;
+    return (id)DPFindView(window.contentView, ^BOOL(NSView *view) { return [view isKindOfClass:DPPeekCard.class]; });
 }

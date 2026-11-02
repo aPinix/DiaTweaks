@@ -19,14 +19,9 @@
     [layer addAnimation:expand forKey:@"peek"];
     CABasicAnimation *corners = [CABasicAnimation animationWithKeyPath:@"cornerRadius"];
     corners.fromValue = @((self.clip.layer.presentationLayer ?: self.clip.layer).cornerRadius);
-    corners.toValue = @(exit == 2 ? 10 : self.pane.layer.cornerRadius);
+    corners.toValue = @(exit == 2 ? 10 : self.surface.layer.cornerRadius);
     corners.duration = duration; corners.fillMode = kCAFillModeForwards; corners.removedOnCompletion = NO;
     [self.clip.layer addAnimation:corners forKey:@"peekCorners"];
-    CABasicAnimation *clear = [CABasicAnimation animationWithKeyPath:@"opacity"];
-    clear.fromValue = @((self.blur.layer.presentationLayer ?: self.blur.layer).opacity);
-    clear.toValue = @0; clear.duration = duration;
-    clear.fillMode = kCAFillModeForwards; clear.removedOnCompletion = NO;
-    [self.blur.layer addAnimation:clear forKey:@"peek"];
     [self animateBackdrop:NO duration:duration];
     [CATransaction commit];
 }

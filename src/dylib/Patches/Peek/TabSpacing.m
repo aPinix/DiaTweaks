@@ -20,7 +20,7 @@ static char DPPeekTabSpaceKey;
     if (!self.adjusted || !NSEqualRects(frame, self.adjustedFrame)) self.nativeFrame = frame;
     // Leave Dia's own close button, title truncation and hover handling inside the narrower content view.
     frame = self.nativeFrame;
-    frame.size.width = MAX(0, NSWidth(frame) - 24);
+    frame.size.width = MAX(0, NSWidth(frame) - 28);
     self.adjustedFrame = frame; self.adjusted = YES;
     if (NSEqualRects(frame, content.frame)) return;
     self.applying = YES;

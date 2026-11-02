@@ -36,8 +36,8 @@ id<NSAccessibility> DPPeekSelectedTab(id root) {
 }
 
 NSRect DPPeekIndicatorFrame(NSRect row, BOOL tile, BOOL flipped) {
-    CGFloat side = tile ? 18 : 16;
-    CGFloat x = NSMaxX(row) - side - (tile ? -4 : 8);
+    CGFloat side = tile ? 18 : 24;
+    CGFloat x = NSMaxX(row) - side - (tile ? -4 : 14);
     CGFloat y = tile ? (flipped ? NSMinY(row) - 4 : NSMaxY(row) - side + 4) : NSMidY(row) - side / 2;
     return NSMakeRect(x, y, side, side);
 }

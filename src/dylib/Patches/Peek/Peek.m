@@ -80,7 +80,7 @@ DP_PATCH(DPPeek) {
     .tint = @"systemMintColor",
     .section = @"Browsing",
     .classes = DPClasses(DPDiaBrowserContext, DPDiaWebContents, DPDiaWebContentsConfiguration,
-        DPDiaContentPane, DPDiaTabView, DPDiaTabContentView, DPDiaFavoriteTab),
+        DPDiaContentPane, DPDiaContentContainer, DPDiaTabView, DPDiaTabContentView, DPDiaFavoriteTab),
     .install = DPInstallPeek,
     .apply = DPApplyPeek,
     .verify = DPVerifyPeek,

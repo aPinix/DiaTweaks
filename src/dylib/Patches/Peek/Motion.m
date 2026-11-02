@@ -18,6 +18,7 @@ CATransform3D DPPeekSqueeze(NSRect card, NSRect rect) {
         CABasicAnimation *grow = [CABasicAnimation animationWithKeyPath:@"transform"];
         grow.fromValue = [NSValue valueWithCATransform3D:DPPeekSqueeze(self.cardFrame, self.link)];
         grow.toValue = [NSValue valueWithCATransform3D:CATransform3DIdentity];
+        grow.duration = duration;
         [animations addObject:grow];
     }
     CABasicAnimation *appear = [CABasicAnimation animationWithKeyPath:@"opacity"];
@@ -26,9 +27,6 @@ CATransform3D DPPeekSqueeze(NSRect card, NSRect rect) {
     CAAnimationGroup *group = [CAAnimationGroup animation];
     group.animations = animations; group.duration = duration; group.timingFunction = DPPeekEase();
     [self.card.layer addAnimation:group forKey:@"peek"];
-    CABasicAnimation *blur = [CABasicAnimation animationWithKeyPath:@"opacity"];
-    blur.fromValue = @0; blur.toValue = @1; blur.duration = duration;
-    [self.blur.layer addAnimation:blur forKey:@"peek"];
     [self animateBackdrop:YES duration:duration];
     self.controls.alphaValue = 0;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(duration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
@@ -51,19 +49,15 @@ CATransform3D DPPeekSqueeze(NSRect card, NSRect rect) {
         CABasicAnimation *shrink = [CABasicAnimation animationWithKeyPath:@"transform"];
         shrink.fromValue = [NSValue valueWithCATransform3D:shown.transform];
         shrink.toValue = [NSValue valueWithCATransform3D:DPPeekSqueeze(self.cardFrame, self.link)];
+        shrink.duration = duration;
         [animations addObject:shrink];
     }
     CABasicAnimation *fade = [CABasicAnimation animationWithKeyPath:@"opacity"];
-    fade.fromValue = @(shown.opacity); fade.toValue = @0; [animations addObject:fade];
+    fade.fromValue = @(shown.opacity); fade.toValue = @0; fade.duration = duration; [animations addObject:fade];
     CAAnimationGroup *group = [CAAnimationGroup animation];
     group.animations = animations; group.duration = duration; group.timingFunction = DPPeekEase();
     group.fillMode = kCAFillModeForwards; group.removedOnCompletion = NO;
     [self.card.layer addAnimation:group forKey:@"peek"];
-    CABasicAnimation *clear = [CABasicAnimation animationWithKeyPath:@"opacity"];
-    clear.fromValue = @((self.blur.layer.presentationLayer ?: self.blur.layer).opacity);
-    clear.toValue = @0; clear.duration = duration;
-    clear.fillMode = kCAFillModeForwards; clear.removedOnCompletion = NO;
-    [self.blur.layer addAnimation:clear forKey:@"peek"];
     [self animateBackdrop:NO duration:duration];
     [CATransaction commit];
 }

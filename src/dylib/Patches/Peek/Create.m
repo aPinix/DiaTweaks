@@ -27,17 +27,16 @@ DPPeekCard *DPPeekShowCard(NSWindow *window, id<DPPeekPage> page, NSPoint origin
     if (!window || !host || DPPeekCardIn(window)) return nil;
     for (NSView *candidate in DPFindViews(DPDiaContentPane))
         if (candidate.window == window && NSWidth(candidate.bounds) * NSHeight(candidate.bounds) > NSWidth(pane.bounds) * NSHeight(pane.bounds)) pane = candidate;
-    DPPeekCard *peek = [[DPPeekCard alloc] initWithFrame:pane ? [window.contentView convertRect:pane.bounds fromView:pane] : window.contentView.bounds];
-    peek.autoresizingMask = pane ? NSViewNotSizable : NSViewWidthSizable | NSViewHeightSizable;
+    NSView *surface = pane;
+    for (NSView *view = pane; view; view = view.superview)
+        if (DPIsKind(view, DPDiaContentContainer)) { surface = view; break; }
+    if (!surface.superview) return nil;
+    DPPeekCard *peek = [[DPPeekCard alloc] initWithFrame:surface.frame];
+    peek.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     peek.pane = pane;
+    peek.surface = surface;
     peek.page = page;
     peek.host = host;
-    NSVisualEffectView *blur = [NSVisualEffectView new];
-    blur.material = NSVisualEffectMaterialFullScreenUI;
-    blur.blendingMode = NSVisualEffectBlendingModeWithinWindow;
-    blur.state = NSVisualEffectStateActive;
-    blur.wantsLayer = YES;
-    peek.blur = blur;
     peek.card = DPLayerView();
     peek.card.layer.shadowOpacity = 0.35;
     peek.card.layer.shadowRadius = 24;
@@ -50,15 +49,16 @@ DPPeekCard *DPPeekShowCard(NSWindow *window, id<DPPeekPage> page, NSPoint origin
     peek.controls = DPPeekControls(peek, @selector(control:));
     [peek.clip addSubview:host];
     [peek.card addSubview:peek.clip];
-    for (NSView *view in @[peek.blur, peek.card, peek.controls]) [peek addSubview:view];
-    [window.contentView addSubview:peek positioned:NSWindowAbove relativeTo:nil];
+    for (NSView *view in @[peek.card, peek.controls]) [peek addSubview:view];
+    // Insert immediately above the content frame, preserving the sidebar's higher native stacking order.
+    [surface.superview addSubview:peek positioned:NSWindowAbove relativeTo:surface];
     [peek layoutSubtreeIfNeeded];
     [page attachToPaneHostView:host];
     [window makeFirstResponder:host];
-    if (pane) {
-        pane.postsFrameChangedNotifications = YES;
+    if (surface) {
+        surface.postsFrameChangedNotifications = YES;
         __weak DPPeekCard *weak = peek;
-        peek.paneObserver = [NSNotificationCenter.defaultCenter addObserverForName:NSViewFrameDidChangeNotification object:pane queue:nil
+        peek.paneObserver = [NSNotificationCenter.defaultCenter addObserverForName:NSViewFrameDidChangeNotification object:surface queue:nil
                                                                         usingBlock:^(NSNotification *note) { [weak followPane]; }];
     }
     peek.monitor = DPWatchKeys(peek);

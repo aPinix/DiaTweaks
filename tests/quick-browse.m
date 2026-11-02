@@ -1,6 +1,7 @@
 // Real AppKit code with stand-ins for Dia's private page and tab APIs.
 #import "Patches/DiaMini/Browse/QuickBrowse.h"
 #import "Patches/Peek/Indicator.h"
+#import "Patches/Peek/Button.h"
 #import "Patches/DiaMini/Browse/Launcher.h"
 
 DPPatch DPDiaMini = {.on = YES};
@@ -82,16 +83,20 @@ static BOOL reduceMotion;
 @property BOOL acceptPromotion;
 @end
 @implementation FixtureDelegate
+- (void)adopt:(FixtureContents *)contents {
+    NSView *pane=DPFindView(self.destination.contentView,^BOOL(NSView *v){ return DPIsKind(v,DPDiaContentPane); });
+    [pane ?: self.destination.contentView addSubview:contents.nativeView]; promoted++;
+}
 - (NSInteger)webContents:(id)c decidePolicyForNavigationAction:(id)a { return 1; }
 - (BOOL)webContents:(id)c willShowContextMenu:(NSMenu *)m withElement:(id)e { return YES; }
 - (void)webContents:(id)s didCreateNewWebContent:(FixtureContents *)c targetURL:(NSURL *)u disposition:(NSInteger)d {
     NSCAssert(d == 2 || d == 9, @"tab or split disposition");
-    if (self.acceptPromotion) { [self.destination.contentView addSubview:c.nativeView]; promoted++; }
+    if (self.acceptPromotion) [self adopt:c];
 }
 - (void)webContents:(id)c didCloseWithSessionID:(id)s {}
 - (void)browser:(id)b didRestoreWebContents:(id)c withSessionId:(id)s {}
 - (void)browser:(id)b didCreateNewWebContents:(FixtureContents *)c isActive:(BOOL)a {
-    if (self.acceptPromotion) { [self.destination.contentView addSubview:c.nativeView]; promoted++; }
+    if (self.acceptPromotion) [self adopt:c];
 }
 @end
 @interface FixtureBrowser : NSObject
@@ -187,6 +192,7 @@ int main(void) {
         alias(FixtureBrowser.class,DPDiaBrowserContext); alias(FixtureConfig.class,DPDiaWebContentsConfiguration);
         alias(FixtureDelegate.class,DPDiaTablessDelegate); alias(FixtureDelegate.class,DPDiaBrowserDelegate);
         alias(FixtureDelegate.class,DPDiaWebContent); alias(NSView.class,DPDiaContentPane);
+        alias(NSView.class,DPDiaContentContainer);
         alias(FixtureHistoryOptions.class,"ArcHistoryQueryOptions");
         alias(FixtureTab.class,DPDiaTabView); alias(NSView.class,DPDiaFavoriteTab);
         alias(FixtureTabContent.class,DPDiaTabContentView);
@@ -222,8 +228,14 @@ int main(void) {
         FixtureTabContent *tabContent=[[objc_getClass(DPDiaTabContentView) alloc] initWithFrame:NSMakeRect(6,0,208,37)];
         [row addSubview:tabContent]; row.needsLayout=YES; [row layoutSubtreeIfNeeded];
         [window.contentView addSubview:row];
-        NSView *pane = [[objc_getClass(DPDiaContentPane) alloc] initWithFrame:NSMakeRect(220,0,780,700)];
-        [window.contentView addSubview:pane];
+        NSView *browserFrame=[[objc_getClass(DPDiaContentContainer) alloc] initWithFrame:NSMakeRect(220,0,780,700)];
+        NSView *pane = [[objc_getClass(DPDiaContentPane) alloc] initWithFrame:browserFrame.bounds];
+        pane.autoresizingMask=NSViewWidthSizable|NSViewHeightSizable;
+        [browserFrame addSubview:pane]; [window.contentView addSubview:browserFrame];
+        NSView *flyout=[[NSView alloc] initWithFrame:NSMakeRect(0,0,300,200)];
+        NSButton *sidebarButton=[NSButton buttonWithTitle:@"Sidebar action" target:nil action:nil];
+        sidebarButton.frame=NSMakeRect(240,40,50,30); [flyout addSubview:sidebarButton];
+        [window.contentView addSubview:flyout positioned:NSWindowAbove relativeTo:browserFrame];
         FixtureBrowser *browser = [objc_getClass(DPDiaBrowser) new];
         FixtureContents *sourcePage = [browser createWebContents:[FixtureConfig new]];
         FixtureDelegate *delegate = [objc_getClass(DPDiaWebContent) new]; delegate.destination = window; delegate.acceptPromotion = YES;
@@ -306,21 +318,51 @@ int main(void) {
 
         DPPeekOpen(window,url,NSMakePoint(500,500),delegate,sourcePage);
         DPPeekCard *peek = DPPeekCardIn(window);
-        NSCAssert(peek && peek.pane == pane && peek.superview == window.contentView,@"Peek covers the page only");
+        NSCAssert(peek && peek.pane == pane && peek.surface==browserFrame && peek.superview==browserFrame.superview,@"Peek tracks the complete browser-content frame");
+        NSCAssert(peek.subviews.count==2 && peek.backdropLayer==browserFrame.layer,@"the content frame itself fades without a blur or painted overlay");
+        CAAnimationGroup *backdrop=(id)[peek.backdropLayer animationForKey:@"DiaTweaks.Peek.Depth"];
+        CABasicAnimation *contentFade=(id)backdrop.animations.lastObject;
+        NSCAssert([contentFade.keyPath isEqual:@"opacity"] && fabs([contentFade.toValue doubleValue]-0.2)<0.001,@"background content fades to twenty percent opacity");
+        NSPoint sidebarPoint=[window.contentView.superview convertPoint:NSMakePoint(265,55) fromView:window.contentView];
+        NSView *sidebarHit=[window.contentView hitTest:sidebarPoint];
+        NSCAssert(sidebarHit==sidebarButton || [sidebarHit isDescendantOf:sidebarButton],@"a revealed sidebar remains above Peek and receives clicks");
+        DPPeekButton *closeControl=(id)peek.controls.subviews.firstObject;
+        NSRect closeFrame=[peek convertRect:CGPathGetBoundingBox(closeControl.disc.path) fromView:closeControl];
+        NSCAssert(NSWidth(closeFrame)==34 && NSMinY(closeFrame)==NSMinY(peek.card.frame)+8,@"Arc-sized circles are inset from the card's top");
+        NSEvent *hover=[NSEvent enterExitEventWithType:NSEventTypeMouseEntered location:NSZeroPoint modifierFlags:0
+            timestamp:0 windowNumber:window.windowNumber context:nil eventNumber:0 trackingNumber:0 userData:NULL];
+        NSCAssert(hover,@"fixture hover event");
+        [closeControl mouseEntered:hover];
+        NSCAssert(closeControl.artwork.transform.m11>1 && [closeControl.artwork animationForKey:@"peekHoverTransform"],@"hover provides animated control feedback");
+        CGFloat overhang=34*(closeControl.artwork.transform.m11-1)/2;
+        for (DPPeekButton *control in peek.controls.subviews) {
+            NSRect circle=CGPathGetBoundingBox(control.disc.path), symbol=CGPathGetBoundingBox(control.glyph.path);
+            NSCAssert(NSContainsRect(control.bounds,NSInsetRect(circle,-overhang,-overhang)),@"every hovered circle fits inside its hit target without cropped edges");
+            NSCAssert(NSMidX(circle)==NSMidX(symbol) && NSMidY(circle)==NSMidY(symbol),@"each vector symbol shares the circle's exact center");
+        }
+        [closeControl mouseExited:hover];
+        NSCAssert(closeControl.artwork.transform.m11==1,@"exiting returns the button to its normal size");
+        reduceMotion=YES; [closeControl mouseEntered:hover];
+        NSCAssert(closeControl.artwork.transform.m11==1 && ![closeControl.artwork animationForKey:@"peekHoverTransform"],@"Reduce Motion keeps hover feedback stationary");
+        reduceMotion=NO; [closeControl mouseExited:hover];
         NSCAssert(DPPeekSelectedTab(window.contentView)==(id)row,@"native source row found");
         NSCAssert(DPFindView(window.contentView,^BOOL(NSView *v){ return [v.accessibilityLabel isEqual:@"Peek open"]; }),@"source row shows a live badge");
         NSView *rowBadge=DPFindView(window.contentView,^BOOL(NSView *v){ return [v.accessibilityLabel isEqual:@"Peek open"]; });
+        NSImageView *badgeIcon=(id)DPFindView(rowBadge,^BOOL(NSView *v){ return [v isKindOfClass:NSImageView.class]; });
+        NSCAssert(NSWidth(rowBadge.frame)==24 && NSEqualRects(badgeIcon.frame,NSMakeRect(4,4,16,16)),@"the row favicon has a padded rounded tile");
+        NSCAssert(NSMaxX(rowBadge.frame)==NSMaxX(row.frame)-14,@"the tile stays inside the tab's rounded end");
+        NSCAssert([rowBadge hitTest:NSZeroPoint]==nil,@"the decoration leaves native tab interactions intact");
         NSRect closeRect=[window.contentView convertRect:tabContent.closeButton.bounds fromView:tabContent.closeButton];
         NSCAssert(NSMaxX(closeRect)+4<=NSMinX(rowBadge.frame),@"native close button sits left of the favicon with a gap");
         [tabContent.closeButton performClick:nil]; NSCAssert(tabCloseClicks==1,@"native close action is preserved");
         for (NSUInteger i=0;i<3;i++) { row.needsLayout=YES; [row layoutSubtreeIfNeeded]; }
-        NSCAssert(NSWidth(tabContent.frame)==184,@"repeated native layouts do not consume more tab width");
+        NSCAssert(NSWidth(tabContent.frame)==180,@"repeated native layouts do not consume more tab width");
         tabContent.closeButton.hidden=YES; tabContent.needsLayout=YES; [tabContent layoutSubtreeIfNeeded];
         NSRect titleRect=[window.contentView convertRect:tabContent.titleLabel.bounds fromView:tabContent.titleLabel];
         NSCAssert(NSMaxX(titleRect)<NSMinX(rowBadge.frame),@"title leaves the favicon slot free without hovering");
         tabContent.closeButton.hidden=NO; tabContent.needsLayout=YES; [tabContent layoutSubtreeIfNeeded];
         row.frame=NSMakeRect(0,620,180,32); row.needsLayout=YES; [row layoutSubtreeIfNeeded];
-        NSCAssert(NSWidth(tabContent.frame)==144,@"reservation follows a narrower horizontal-size tab");
+        NSCAssert(NSWidth(tabContent.frame)==140,@"reservation follows a narrower horizontal-size tab");
         row.frame=NSMakeRect(0,620,220,37); row.needsLayout=YES; [row layoutSubtreeIfNeeded];
         NSCAssert([peek.backdropLayer animationForKey:@"DiaTweaks.Peek.Depth"],@"background depth animation installed");
         NSCAssert(fabs(DPPeekDepth(NSMakeRect(0,0,800,600),0.975).m41-10)<0.01,@"depth anchored at center");
@@ -330,7 +372,7 @@ int main(void) {
         drain(0.40);
         NSCAssert(!DPPeekCardIn(window) && promoted==beforePromotion+1 && closed==beforeClose && loads==beforeLoads,
             @"expanded page becomes a tab without reloading or closing it");
-        NSCAssert(![pane.layer animationForKey:@"DiaTweaks.Peek.Depth"],@"background restored after expansion");
+        NSCAssert(![browserFrame.layer animationForKey:@"DiaTweaks.Peek.Depth"],@"the entire content frame is restored after expansion");
         NSCAssert(!DPFindView(window.contentView,^BOOL(NSView *v){ return [v.accessibilityLabel isEqual:@"Peek open"]; }),@"source badge removed with the card");
         NSCAssert(NSWidth(tabContent.frame)==208,@"closing Peek restores the tab's full native width");
 
@@ -359,7 +401,8 @@ int main(void) {
         reduceMotion=YES;
         DPPeekOpen(window,url,NSMakePoint(500,500),delegate,sourcePage);
         peek=DPPeekCardIn(window);
-        NSCAssert(!peek.backdropLayer,@"Reduce Motion avoids moving the background");
+        CAAnimationGroup *background=(id)[peek.backdropLayer animationForKey:@"DiaTweaks.Peek.Depth"];
+        for (CABasicAnimation *a in background.animations) NSCAssert(![a.keyPath isEqual:@"transform"],@"Reduce Motion fades the content without moving it");
         CAAnimationGroup *group=(id)[peek.card.layer animationForKey:@"peek"];
         for (CABasicAnimation *a in group.animations) NSCAssert(![a.keyPath isEqual:@"transform"],@"Reduce Motion uses opacity");
         DPDiaMini.on=NO; DPBrowseApply(&DPDiaMini);
