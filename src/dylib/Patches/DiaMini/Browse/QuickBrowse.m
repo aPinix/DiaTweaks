@@ -54,7 +54,8 @@ NSString *DPBrowseVerify(DPPatch *patch) {
         if (!patch->on) return @"a disabled preview is still open";
         if (!preview.host.window || preview.host.window != preview.window) return @"the native page is detached";
         NSView *frame = preview.window.contentView.superview;
-        if (!preview.window.toolbar || !DPFindView(frame, ^BOOL(NSView *view) { return [view.identifier isEqual:@"DiaMiniAddressPill"]; })
+        if (!DPFindView(frame, ^BOOL(NSView *view) { return [view.identifier isEqual:@"DiaMiniBrowserHeader"]; })
+            || !DPFindView(frame, ^BOOL(NSView *view) { return [view.identifier isEqual:@"DiaMiniAddressPill"]; })
             || !DPFindView(frame, ^BOOL(NSView *view) { return [view.identifier isEqual:@"DiaMiniOpenControl"]; }))
             return @"the Mini browser toolbar is missing";
     }

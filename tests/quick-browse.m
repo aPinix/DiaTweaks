@@ -12,7 +12,11 @@ void DPTestMiniLauncherLayout(DPMiniLauncher *launcher);
 void DPTestSiteSearch(DPBrowseSource *source);
 void DPTestCommandBar(DPBrowseSource *source);
 void DPTestMiniBrowserChrome(DPBrowseSource *source);
+void DPTestMiniExtensions(DPBrowseSource *source);
 void DPTestMiniWindowCommand(DPBrowseSource *source);
+void DPTestMiniDestinations(void);
+void DPTestMiniDestinationTabMenu(void);
+void DPTestMiniDestinationSelection(DPBrowseSource *source);
 
 DPPatch DPDiaMini = {.on = YES};
 DPPatch DPDiaMiniExternal;
@@ -187,6 +191,8 @@ static BOOL reduceMotion;
 @end
 
 static BOOL reduced(id self, SEL cmd) { return reduceMotion; }
+// Fixtures supply click modifiers explicitly; physical keyboard state must not alter native handoff checks.
+static NSEventModifierFlags fixtureModifiers(id self, SEL cmd) { return 0; }
 static void alias(Class base, const char *name) {
     Class cls = objc_allocateClassPair(base,name,0); NSCAssert(cls,@"unique class"); objc_registerClassPair(cls);
 }
@@ -214,6 +220,7 @@ int main(void) {
         alias(FixtureTabContent.class,DPDiaTabContentView);
         alias(NSView.class,"FixtureSelectionOutlineView");
         DPHookClass(NSWorkspace.class,@selector(accessibilityDisplayShouldReduceMotion),(IMP)reduced);
+        DPHookClass(object_getClass(NSEvent.class),@selector(modifierFlags),(IMP)fixtureModifiers);
         NSApp.mainMenu = [NSMenu new];
         FixtureApplicationDelegate *applicationDelegate=[FixtureApplicationDelegate new]; NSApp.delegate=applicationDelegate;
         NSMenuItem *file = [[NSMenuItem alloc] initWithTitle:@"File" action:nil keyEquivalent:@""];
@@ -280,7 +287,8 @@ int main(void) {
         NSCAssert(launcher.table.selectedRow==0,@"favicon updates preserve the highlighted result");
         DPTestMiniLauncherLayout(launcher);
         NSWindow *launcherShadow=launcher.shadowWindow;
-        launcher.search.stringValue=@"first"; [launcher query]; launcher.search.stringValue=@"second"; [launcher query]; drain(0.03);
+        launcher.search.stringValue=@"first"; [launcher query]; launcher.search.stringValue=@"second"; [launcher query];
+        drainUntil(^BOOL{ return [launcher.suggestions.firstObject.url.path isEqual:@"/second"]; });
         NSCAssert([launcher.suggestions.firstObject.url.path isEqual:@"/second"],@"out-of-order suggestions cannot replace the latest query");
         [launcher choose:nil];
         NSCAssert(!DPCurrentMiniLauncher && DPBrowseWindows.count==1,@"Enter replaces the launcher with a compact result window");
@@ -468,8 +476,12 @@ int main(void) {
         DPTestCommandBar(source);
         DPDiaMini.on = YES; DPBrowseApply(&DPDiaMini);
         DPTestMiniBrowserChrome(source);
+        DPTestMiniDestinations();
+        DPTestMiniDestinationTabMenu();
+        DPTestMiniDestinationSelection(source);
         DPDiaMini.on = NO; DPBrowseApply(&DPDiaMini);
         DPTestMiniWindowCommand(source);
+        DPTestMiniExtensions(source);
         [window close];
         [NSUserDefaults.standardUserDefaults removePersistentDomainForName:shortcutDomain];
         puts("PASS: Mini, scoped site search, configurable Command Bar and native tab handoff; Peek motion, badges and Reduce Motion");

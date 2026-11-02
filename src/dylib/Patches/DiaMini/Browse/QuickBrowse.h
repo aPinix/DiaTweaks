@@ -26,15 +26,15 @@ enum { DPBrowseCancel = 0, DPBrowseCurrentTab = 1, DPBrowseForegroundTab = 2, DP
 @property(weak) NSWindow *window;
 @end
 
+@class DPMiniBrowserDestinationPicker;
 @interface DPBrowseWindow : NSWindowController <NSWindowDelegate, NSTextFieldDelegate>
 @property(strong) DPBrowseSource *source;
 @property(strong) id<DPBrowseContents> contents;
 @property(strong) id contentsDelegate;
 @property(strong) NSView *host;
 @property(strong) NSTextField *address;
-@property(strong) NSView *addressPill, *openControl;
-@property(strong) NSLayoutConstraint *addressWidth;
-@property(strong) NSPopover *destinationPopover;
+@property(strong) NSView *addressPill, *openControl, *browserHeader;
+@property(strong) DPMiniBrowserDestinationPicker *destinationPopover;
 @property(strong) id profileContext;
 @property(strong) NSURL *pendingURL, *pendingOriginURL;
 @property NSTimeInterval pendingSince;
@@ -64,6 +64,7 @@ enum { DPBrowseCancel = 0, DPBrowseCurrentTab = 1, DPBrowseForegroundTab = 2, DP
 @interface DPBrowseWindow (OpenPromotion)
 - (BOOL)canPromoteToSource:(DPBrowseSource *)source;
 - (void)promoteToSource:(DPBrowseSource *)source;
+- (void)promoteToSource:(DPBrowseSource *)source completion:(void (^)(BOOL adopted))completion;
 @end
 
 extern DPPatch DPDiaMini, DPDiaMiniExternal;

@@ -14,10 +14,11 @@ Enable **Settings → Patches → Browsing → Dia Mini**, or `diatweaks enable 
 - In site search, Escape returns to an empty normal input. Another Escape, or a click outside, dismisses the search box. Closing it leaves the page you were working on in place.
 - Right-click a web link and select **Open Link in Dia Mini**.
 - The separate **[Open external links in Dia Mini](Open-external-links-in-Dia-Mini.md)** option opens links from other apps in Mini first. Dia must be your chosen browser for that link. It does not change clicks inside webpages.
-- The browser has one compact toolbar with native window controls, a centered domain and loading indicator, a copy-link button and **Open in Dia**. Its initial frame is 1280×950, reduced to fit the screen.
+- The browser has a 48-point translucent header with native window controls, a 30-point address pill, centered domain and loading indicator, extensions, copy link and a split **Open in** control. Its initial frame is 1280×950, reduced to fit the screen.
 - Click the address pill or press ⌘L to edit the full URL in a centered Command Bar. ⌘T opens it with an empty input. Return loads the result in the same Mini window, including site searches.
 - With Command Bar enabled, its configured shortcut (⌘K by default) and **File → Command Bar** also open inside the active Mini. The global ⌥⌘N launcher still creates a new Mini.
-- Use ⌘[ / ⌘] for Back / Forward and ⌘R for Reload. **Open in Dia**, ⌘O or ⌘Return moves the live page into a normal tab. The arrow beside the button opens a searchable list of available Dia windows in the same profile.
+- Use ⌘[ / ⌘] for Back / Forward and ⌘R for Reload. **Open in**, ⌘O or ⌘Return moves the live page into a normal tab. The arrow opens a searchable list of Dia’s own destinations, preserving their native names and icons. Dia versions exposing only Profiles show **Search Profiles**. The current destination appears in the button; Arc’s Spaces are never imported.
+- The puzzle button lists the source profile’s installed extensions, including disabled extensions and those without a toolbar action. **Open in Dia** transfers this page to a regular tab where extension actions are available.
 - Escape or ⌘W first closes an open Command Bar; the Mini remains. In site search, Escape first leaves the search scope. With the bar closed, Escape or ⌘W closes Mini.
 - Escape or the close button closes the temporary window. Turning Dia Mini off closes its windows and removes its File menu command.
 
@@ -25,11 +26,11 @@ Mini and Peek have independent switches. Mini is a separate, resizable window, r
 
 ## Limits
 
-This is experimental and depends on Dia’s private native APIs. It is a compact browsing surface, without Dia’s Chat, sidebar or extension toolbar. Dia’s extension actions target tracked browser tabs, so a misleading Mini extension button is omitted. Use **Open in Dia** for those features and website permission dialogs. The destination picker lists Dia windows; Arc’s Spaces have no equivalent here.
+This is experimental and depends on Dia’s private native APIs. It is a compact browsing surface, without Dia’s Chat or sidebar. Mini’s puzzle button shows an extension catalogue; extension action popups require a regular Dia tab because Dia’s shipped action API targets tracked browser tabs. Use **Open in Dia** for those actions and website permission dialogs.
 
 Dia must be running for its global shortcut to work. The recorder rejects conflicting Dia menu shortcuts and reports global registration failures without saving the rejected choice. macOS may intercept reserved system shortcuts before they reach the recorder. The File menu command remains available. With no browser window available, Mini asks Dia to prepare a temporary background source window. The source is removed when no Mini needs it, unless you promote a page into it.
 
-Mini uses the current source profile, including its private browsing context; it does not choose profiles for you. Native history supplies recents; Mini’s additional fallback list stays in memory and is scoped to its source factory. An existing Mini can keep navigating after its source window closes. Moving it into a regular tab requires an available destination window in that profile; a rejected handoff restores the same page to Mini.
+Mini uses the current source profile, including its private browsing context. Native history supplies recents; Mini’s additional fallback list stays in memory and is scoped to its source factory. An existing Mini can keep navigating after its source window closes. Opening in a destination first transfers the live page into its source window. For another destination, Dia’s own move action then handles the move. A failed initial handoff restores Mini; if a later move is unavailable, the page stays in Dia and a message explains how to use its native Move menu. Mini never replays a callback belonging to another tab.
 
 ## Verification
 

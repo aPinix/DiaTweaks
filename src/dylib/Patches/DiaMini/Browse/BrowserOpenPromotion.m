@@ -36,7 +36,10 @@ BOOL DPBrowseMiniPageAdopted(DPBrowseWindow *owner) {
         || (source.contents && [source.delegate respondsToSelector:@selector(webContents:didCreateNewWebContent:targetURL:disposition:)]);
 }
 - (void)promoteToSource:(DPBrowseSource *)source {
-    if (![self canPromoteToSource:source]) return (void)NSBeep();
+    [self promoteToSource:source completion:nil];
+}
+- (void)promoteToSource:(DPBrowseSource *)source completion:(void (^)(BOOL))completion {
+    if (![self canPromoteToSource:source]) { if (completion) completion(NO); return (void)NSBeep(); }
     self.promoting = YES; [self.destinationPopover close]; [self updatePage];
     id<DPBrowseContents> page = self.contents;
     NSURL *url = self.pendingURL ?: page.url;
@@ -55,10 +58,12 @@ BOOL DPBrowseMiniPageAdopted(DPBrowseWindow *owner) {
             self.transferred = YES;
             if (DPBrowseSourceUsable(source)) [source.window makeKeyAndOrderFront:nil];
             [self close];
+            if (completion) completion(YES);
         } else {
             self.promoting = NO; [page attachToPaneHostView:self.host];
             [self.window makeKeyAndOrderFront:nil]; [self.window makeFirstResponder:page.nativeView];
             [self updatePage]; NSBeep();
+            if (completion) completion(NO);
         }
     };
     if (DPBrowseMiniPageAdopted(self)) return finish();

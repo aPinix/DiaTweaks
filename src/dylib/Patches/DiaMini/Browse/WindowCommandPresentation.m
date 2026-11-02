@@ -1,10 +1,13 @@
 #import "WindowCommand.h"
 #import "../Search/Provider.h"
+#import "BrowserExtensions.h"
+#import "BrowserToolbar.h"
 
 DPBrowseWindow *DPBrowseMiniForWindow(NSWindow *window) {
     if (!window) return nil;
     for (DPBrowseWindow *owner in DPBrowseWindows) if (!owner.closing && (owner.window == window
-        || (owner.destinationPopover.shown && owner.destinationPopover.contentViewController.view.window == window))) return owner;
+        || (owner.destinationPopover.shown && owner.destinationPopover.contentViewController.view.window == window)
+        || (DPBrowseMiniExtensionsPopover(owner).shown && DPBrowseMiniExtensionsPopover(owner).contentViewController.view.window == window))) return owner;
     if ([DPCurrentMiniLauncher isKindOfClass:DPMiniWindowCommand.class] && DPCurrentMiniLauncher.window == window)
         return ((DPMiniWindowCommand *)DPCurrentMiniLauncher).miniOwner;
     return nil;
@@ -13,8 +16,8 @@ DPBrowseWindow *DPBrowseMiniForWindow(NSWindow *window) {
 void DPBrowseEditMini(DPBrowseWindow *owner, BOOL prefill) {
     if (!DPDiaMini.on || DPDiaMini.unavailable || !owner || owner.closing || owner.promoting || owner.transferred || !owner.contents) return;
     // Finish the popup's key-window transition before focusing a new palette.
-    owner.destinationPopover.animates = NO;
     [owner.destinationPopover close];
+    DPBrowseCloseMiniExtensions(owner);
     DPMiniWindowCommand *current = [DPCurrentMiniLauncher isKindOfClass:DPMiniWindowCommand.class] ? (id)DPCurrentMiniLauncher : nil;
     if (current.miniOwner == owner && current.window.visible) {
         [current focus];

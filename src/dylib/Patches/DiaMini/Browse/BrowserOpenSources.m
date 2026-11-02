@@ -1,41 +1,28 @@
 #import "BrowserToolbar.h"
+#import "BrowserDestinations.h"
+#import "BrowserExtensions.h"
 
-NSArray<DPBrowseSource *> *DPBrowseMiniSourcesForProfile(DPBrowseWindow *owner, NSArray<DPBrowseSource *> *sources) {
-    NSMutableArray *result = [NSMutableArray array]; NSMutableSet *windows = [NSMutableSet set];
-    for (DPBrowseSource *source in sources) {
-        if (![source.window.accessibilityIdentifier hasPrefix:@"bigBrowserWindow"]
-            || [windows containsObject:source.window] || ![owner canPromoteToSource:source]) continue;
-        [windows addObject:source.window]; [result addObject:source];
-    }
-    return result;
-}
-
+static char DPMiniDestinationsKey;
 @implementation DPBrowseWindow (OpenDestinations)
-- (NSArray<DPBrowseSource *> *)destinationSources {
-    NSMutableArray *sources = [NSMutableArray array]; if (self.source) [sources addObject:self.source];
-    NSMutableArray *windows = [NSApp.orderedWindows mutableCopy];
-    for (NSWindow *window in NSApp.windows) if (![windows containsObject:window]) [windows addObject:window];
-    for (NSWindow *window in windows) {
-        if (![window.accessibilityIdentifier hasPrefix:@"bigBrowserWindow"]) continue;
-        DPBrowseSource *source = nil;
-        for (id page in DPBrowseKnownContents()) {
-            DPBrowseSource *candidate = DPBrowseSourceFor(page);
-            if (candidate.window == window) { source = candidate; break; }
-        }
-        source = source ?: DPBrowseFallbackSource(window);
-        if (source) [sources addObject:source];
-    }
-    return DPBrowseMiniSourcesForProfile(self, sources);
+- (void)captureNativeDestinations {
+    NSWindow *window = self.source.window;
+    // Read metadata from the selected native tab, without retaining its callback or changing its selection.
+    NSMenu *menu = DPBrowseMenuForSelectedNativeTab(window, ^{ return window.visible; });
+    DPMiniNativeDestinations *catalog = DPBrowseDiscoverNativeDestinations(menu, YES);
+    if (!catalog.entries.count) catalog = DPBrowseDiscoverNativeDestinations(NSApp.mainMenu, YES);
+    objc_setAssociatedObject(self, &DPMiniDestinationsKey, catalog, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+- (DPMiniNativeDestinations *)nativeDestinations {
+    return objc_getAssociatedObject(self, &DPMiniDestinationsKey);
 }
 - (void)showOpenDestinations:(id)sender {
     if (self.closing || self.promoting || self.transferred) return;
+    DPBrowseCloseMiniExtensions(self);
     if (self.destinationPopover.shown) return [self.destinationPopover close];
+    [self captureNativeDestinations];
     DPMiniBrowserDestinations *controller = [DPMiniBrowserDestinations new];
-    controller.owner = self; controller.sources = [self destinationSources]; controller.filtered = controller.sources;
-    NSPopover *popover = [NSPopover new]; popover.behavior = NSPopoverBehaviorTransient;
-    popover.contentViewController = controller; self.destinationPopover = popover;
-    NSView *anchor = [sender isKindOfClass:NSView.class] ? sender : self.openControl;
-    [popover showRelativeToRect:anchor.bounds ofView:anchor preferredEdge:NSRectEdgeMinY];
-    [popover.contentViewController.view.window makeFirstResponder:controller.search];
+    controller.owner = self; controller.catalog = self.nativeDestinations;
+    self.destinationPopover = [[DPMiniBrowserDestinationPicker alloc] initWithContentViewController:controller];
+    [self.destinationPopover showRelativeToView:self.openControl];
 }
 @end

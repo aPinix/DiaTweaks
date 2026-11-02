@@ -9,6 +9,8 @@ void DPTestMiniLauncherLayout(DPMiniLauncher *launcher) {
     NSView *divider = DPFindView(root, ^BOOL(NSView *view) { return [view.identifier isEqual:@"DiaMiniSearchDivider"]; });
     NSCAssert(glass && divider && fabs(NSMidY(glass.frame) - NSMidY(launcher.search.frame)) < 0.5,
         @"the search field is vertically centered with its header icon");
+    NSCAssert(launcher.search.usesSingleLineMode && launcher.search.maximumNumberOfLines == 1
+        && !launcher.search.cell.wraps && launcher.search.cell.scrollable, @"long URLs use one horizontally scrolling line");
     NSCAssert(NSMinY(divider.frame) > NSMaxY(launcher.search.frame)
         && NSMaxY(divider.frame) <= NSMinY(launcher.scroll.frame), @"a divider separates the header from its results");
     NSMutableArray *many = [NSMutableArray new];
@@ -47,4 +49,15 @@ void DPTestMiniLauncherLayout(DPMiniLauncher *launcher) {
     NSCAssert(!launcher.status.hidden && launcher.scroll.hidden && NSContainsRect(root.bounds, launcher.status.frame),
         @"empty-state messages occupy the list area");
     launcher.search.stringValue = text; [launcher setResults:saved];
+    NSTextView *nativeEditor = (id)launcher.search.currentEditor;
+    NSCAssert([nativeEditor isKindOfClass:NSTextView.class], @"the real field editor is available for long-URL layout");
+    launcher.updatingInput = YES;
+    NSString *longURL = [@"https://www.google.com/search?q=" stringByAppendingString:[@"long-query-" stringByPaddingToLength:1200 withString:@"long-query-" startingAtIndex:0]];
+    launcher.search.stringValue = nativeEditor.string = longURL;
+    [nativeEditor.layoutManager ensureLayoutForTextContainer:nativeEditor.textContainer];
+    __block NSUInteger lines = 0;
+    [nativeEditor.layoutManager enumerateLineFragmentsForGlyphRange:NSMakeRange(0,nativeEditor.layoutManager.numberOfGlyphs)
+        usingBlock:^(NSRect rect, NSRect used, NSTextContainer *container, NSRange glyphs, BOOL *stop) { lines++; }];
+    NSCAssert(lines == 1, @"a long selected Google URL cannot wrap into a clipped second line");
+    launcher.search.stringValue = nativeEditor.string = text; launcher.updatingInput = NO;
 }

@@ -54,6 +54,8 @@
     self.search = [[NSTextField alloc] initWithFrame:NSMakeRect(50, 17, width - 104, 30)];
     self.search.bordered = NO; self.search.drawsBackground = NO; self.search.focusRingType = NSFocusRingTypeNone;
     self.search.usesSingleLineMode = YES;
+    self.search.maximumNumberOfLines = 1; self.search.cell.wraps = NO; self.search.cell.scrollable = YES;
+    self.search.lineBreakMode = NSLineBreakByClipping;
     self.search.placeholderString = @"Search or Enter URL…"; self.search.font = [NSFont systemFontOfSize:16 weight:NSFontWeightSemibold];
     CGFloat textHeight = self.search.fittingSize.height;
     self.search.frame = NSMakeRect(50, (DPMiniHeaderHeight - textHeight) / 2, width - 104, textHeight);

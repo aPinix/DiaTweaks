@@ -17,7 +17,7 @@ static void DPMiniCommandClose(DPMiniLauncher *launcher) { launcher.restorePrevi
 static void DPMiniCommandChooser(DPBrowseWindow *owner) {
     [owner.window makeKeyAndOrderFront:nil];
     [owner showOpenDestinations:owner.openControl];
-    NSPopover *chooser = owner.destinationPopover;
+    DPMiniBrowserDestinationPicker *chooser = owner.destinationPopover;
     NSWindow *popup = chooser.contentViewController.view.window;
     NSCAssert(chooser.shown && popup && DPBrowseMiniForWindow(popup) == owner, @"destination popup keys retain their Mini owner");
     NSCAssert(DPBrowseHandleMiniKeyEvent(DPMiniCommandKey(popup, @"t", kVK_ANSI_T, NSEventModifierFlagCommand))

@@ -1,5 +1,6 @@
 #import "QuickBrowse.h"
 #import "BrowserToolbar.h"
+#import "BrowserExtensions.h"
 #import <objc/message.h>
 
 @implementation DPBrowseWindow
@@ -7,12 +8,14 @@
 - (BOOL)startWithURL:(NSURL *)url source:(DPBrowseSource *)source {
     self.source = source;
     self.profileContext = DPBrowseContext(source);
+    [self captureNativeDestinations];
     NSScreen *screen = source.window.screen ?: NSScreen.mainScreen;
     NSRect anchor = NSIsEmptyRect(self.launcherFrame) ? source.window.frame : self.launcherFrame;
     if (!NSIsEmptyRect(self.launcherFrame)) for (NSScreen *candidate in NSScreen.screens)
         if (NSIntersectsRect(candidate.frame, self.launcherFrame)) { screen = candidate; break; }
     NSRect frame = DPBrowseFrame(anchor, screen.visibleFrame);
-    NSWindowStyleMask style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable | NSWindowStyleMaskMiniaturizable;
+    NSWindowStyleMask style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskResizable
+        | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskFullSizeContentView;
     NSRect content = [NSWindow contentRectForFrameRect:frame styleMask:style];
     NSWindow *panel = [[NSWindow alloc] initWithContentRect:content styleMask:style backing:NSBackingStoreBuffered defer:NO];
     panel.releasedWhenClosed = NO; panel.tabbingMode = NSWindowTabbingModeDisallowed;
@@ -51,12 +54,17 @@
     return YES;
 }
 
-- (void)windowDidBecomeKey:(NSNotification *)note { self.contents.hasFocus = YES; }
-- (void)windowDidResignKey:(NSNotification *)note { self.contents.hasFocus = NO; }
+- (void)windowDidBecomeKey:(NSNotification *)note {
+    if (!self.promoting && !self.transferred && !self.closing) self.contents.hasFocus = YES;
+}
+- (void)windowDidResignKey:(NSNotification *)note {
+    if (!self.promoting && !self.transferred && !self.closing) self.contents.hasFocus = NO;
+}
 - (void)windowWillClose:(NSNotification *)note {
     if (self.closing) return;
     self.closing = YES;
     if (self.promoting && DPBrowseMiniPageAdopted(self)) self.transferred = YES;
+    DPBrowseCloseMiniExtensions(self);
     [self.destinationPopover close]; self.destinationPopover = nil;
     BOOL restore = !self.transferred && self.window.isKeyWindow;
     [self.refresh invalidate]; self.refresh = nil;

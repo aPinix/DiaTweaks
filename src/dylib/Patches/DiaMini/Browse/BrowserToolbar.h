@@ -1,4 +1,5 @@
 #import "Launcher.h"
+#import "BrowserDestinations.h"
 
 @interface DPMiniBrowserProgress : NSView
 @property double progress;
@@ -6,7 +7,7 @@
 @interface DPMiniBrowserAddressPill : NSView
 @property (weak) DPBrowseWindow *owner;
 @property (strong) NSTextField *domain;
-@property (strong) NSButton *editButton, *linkButton;
+@property (strong) NSButton *editButton, *linkButton, *extensionButton;
 @property (strong) NSImageView *searchIcon;
 @property (strong) DPMiniBrowserProgress *progressView;
 - (instancetype)initWithOwner:(DPBrowseWindow *)owner;
@@ -15,28 +16,50 @@
 @interface DPMiniBrowserOpenControl : NSView
 @property (weak) DPBrowseWindow *owner;
 @property (strong) NSButton *primary, *arrow;
+@property (strong) NSTextField *titleLabel, *shortcutLabel;
 - (instancetype)initWithOwner:(DPBrowseWindow *)owner;
+- (void)setDestinationTitle:(NSString *)title;
 @end
 
-@interface DPBrowseWindow (ToolbarItems) <NSToolbarDelegate>
+extern const CGFloat DPMiniBrowserHeaderHeight;
+@interface DPMiniBrowserHeader : NSVisualEffectView
+@property(weak) DPBrowseWindow *owner;
+@property(strong) NSView *tint;
+- (instancetype)initWithOwner:(DPBrowseWindow *)owner;
+- (void)installWindowButtons;
 @end
+
 @interface DPBrowseWindow (AddressActions)
 - (void)editAddress:(id)sender;
 - (void)copyLink:(id)sender;
 - (NSString *)browserURLString;
 @end
 @interface DPBrowseWindow (OpenDestinations)
-- (NSArray<DPBrowseSource *> *)destinationSources;
+- (void)captureNativeDestinations;
+- (DPMiniNativeDestinations *)nativeDestinations;
 - (void)showOpenDestinations:(id)sender;
 @end
+@interface DPBrowseWindow (NativeDestinationTransfer)
+- (void)openNativeDestination:(DPMiniNativeDestination *)choice;
+@end
 BOOL DPBrowseMiniPageAdopted(DPBrowseWindow *owner);
-NSArray<DPBrowseSource *> *DPBrowseMiniSourcesForProfile(DPBrowseWindow *owner, NSArray<DPBrowseSource *> *sources);
+BOOL DPBrowseAdoptedPageSelected(id<DPBrowseContents> page, NSWindow *window);
 
-@interface DPMiniBrowserDestinations : NSViewController <NSTableViewDataSource, NSTableViewDelegate, NSSearchFieldDelegate>
+@interface DPMiniBrowserDestinations : NSViewController <NSTableViewDataSource, NSTableViewDelegate, NSTextFieldDelegate>
 @property(weak) DPBrowseWindow *owner;
-@property(strong) NSArray<DPBrowseSource *> *sources, *filtered;
-@property(strong) NSSearchField *search;
+@property(strong) DPMiniNativeDestinations *catalog;
+@property(copy) NSArray<DPMiniNativeDestination *> *filtered;
+@property(strong) NSTextField *search, *status;
 @property(strong) NSTableView *table;
 - (void)filter:(id)sender;
 - (void)choose:(id)sender;
+- (void)dismiss:(id)sender;
+@end
+
+@interface DPMiniBrowserDestinationPicker : NSObject <NSWindowDelegate>
+@property(readonly) BOOL shown;
+@property(strong, readonly) DPMiniBrowserDestinations *contentViewController;
+- (instancetype)initWithContentViewController:(DPMiniBrowserDestinations *)controller;
+- (void)showRelativeToView:(NSView *)view;
+- (void)close;
 @end

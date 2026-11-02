@@ -1,4 +1,5 @@
 #import "BrowserToolbar.h"
+#import "BrowserDestinations.h"
 #import <objc/message.h>
 
 @implementation DPBrowseWindow (ChromeState)
@@ -22,18 +23,16 @@
     self.address.stringValue = display.absoluteString ?: @"";
     [(DPMiniBrowserAddressPill *)self.addressPill showURL:display loading:loading progress:progress];
     DPMiniBrowserOpenControl *open = (id)self.openControl;
+    NSString *destination = nil;
+    for (DPMiniNativeDestination *entry in self.nativeDestinations.entries)
+        if (entry.state == NSControlStateValueOn) { destination = entry.title; break; }
+    [open setDestinationTitle:destination ?: @"Dia"];
     open.primary.enabled = [self canPromoteToSource:self.source]; open.arrow.enabled = !self.promoting && !self.closing;
     NSString *title = self.contents.title;
     self.window.title = title.length ? [@"Dia Mini — " stringByAppendingString:title] : @"Dia Mini";
     [self layoutBrowserToolbar];
 }
 - (void)layoutBrowserToolbar {
-    CGFloat width = MAX(180, NSWidth(self.window.frame)-270);
-    if (self.addressPill.window == self.window && self.openControl.window == self.window) {
-        NSRect address = [self.addressPill convertRect:self.addressPill.bounds toView:nil];
-        NSRect open = [self.openControl convertRect:self.openControl.bounds toView:nil];
-        if (NSMinX(open) > NSMinX(address)) width = MAX(180, floor(NSMinX(open)-NSMinX(address)-12));
-    }
-    if (fabs(self.addressWidth.constant-width) > 0.5) self.addressWidth.constant = width;
+    self.browserHeader.needsLayout = YES;
 }
 @end

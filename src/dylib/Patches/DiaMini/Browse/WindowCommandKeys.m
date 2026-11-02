@@ -1,5 +1,7 @@
 #import "WindowCommand.h"
 #import "../Shortcuts/Shortcut.h"
+#import "BrowserExtensions.h"
+#import "BrowserToolbar.h"
 
 NSString *DPBrowseReservedMiniShortcut(DPMiniShortcut *shortcut) {
     if (shortcut.modifiers != NSEventModifierFlagCommand) return nil;
@@ -21,6 +23,11 @@ BOOL DPBrowseHandleMiniKeyEvent(NSEvent *event) {
     if (owner.promoting) return (!flags && event.keyCode == 53) || (flags == NSEventModifierFlagCommand
         && ([@[@"l", @"t", @"w", @"o", @"r", @"[", @"]"] containsObject:key] || event.keyCode == 36 || event.keyCode == 76));
     BOOL chooser = owner.destinationPopover.shown && owner.destinationPopover.contentViewController.view.window == event.window;
+    NSPopover *extensions = DPBrowseMiniExtensionsPopover(owner);
+    if (extensions.shown && extensions.contentViewController.view.window == event.window
+        && ((!flags && event.keyCode == 53) || (flags == NSEventModifierFlagCommand && [key isEqual:@"w"]))) {
+        DPBrowseCloseMiniExtensions(owner); return YES;
+    }
     if (chooser && ((!flags && event.keyCode == 53) || (flags == NSEventModifierFlagCommand && [key isEqual:@"w"]))) {
         [owner.destinationPopover close]; return YES;
     }
@@ -43,6 +50,7 @@ BOOL DPBrowseHandleMiniKeyEvent(NSEvent *event) {
     DPMiniWindowCommand *palette = [DPCurrentMiniLauncher isKindOfClass:DPMiniWindowCommand.class] ? (id)DPCurrentMiniLauncher : nil;
     if (palette.miniOwner == owner) { palette.restorePrevious = NO; [palette close]; }
     [owner.destinationPopover close];
+    DPBrowseCloseMiniExtensions(owner);
     [owner.window makeKeyAndOrderFront:nil]; [owner.window makeFirstResponder:owner.contents.nativeView];
     if (promote) [owner promote:nil];
     else if ([key isEqual:@"r"]) [owner reload:nil];

@@ -1,6 +1,9 @@
 #import "QuickBrowse.h"
+#import "WindowCommand.h"
 
 DPBrowseSource *DPBrowseFrontSource(void) {
+    DPBrowseWindow *owner = DPBrowseMiniForWindow(NSApp.keyWindow);
+    if (owner) return owner.source;
     for (DPBrowseWindow *preview in DPBrowseWindows)
         if (preview.window.isKeyWindow) return preview.source;
     NSMutableOrderedSet *windows = [NSMutableOrderedSet orderedSetWithArray:NSApp.orderedWindows];
