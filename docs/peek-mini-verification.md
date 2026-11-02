@@ -59,3 +59,16 @@ The default is now Option+Command+N. The Mini detail page includes a shortcut re
 - `build/proof/mini-shortcut-settings-custom.png` shows the persisted custom binding, and `build/proof/mini-shortcut-settings-default.png` shows the final default. Both are native settings-window captures kept local and ignored by Git.
 
 The unchanged documentation gate still reports the three missing upstream wiki pages and sidebar links listed above; no new patch key or wiki page is introduced by this update.
+
+## Peek from the clicked link
+
+Opening and dismissal now share the saved mouse-down point. The card scales uniformly from 10% at that point and returns there on dismissal, keeping the 220 ms closing fade. This replaces the earlier in-place recession described above. Pointer movement does not change the destination, and moving the window keeps the point attached to its content. Reduce Motion still fades without scaling.
+
+Transforms use the parent layer's coordinates. AppKit flips the card's backing layer when it displays, which made an earlier local-coordinate calculation reverse the vertical direction. The rendered-hierarchy regression test detects that error before the correction and passes afterward. It checks every corner, the center, different anchors, window movement, remembered input, matching opening/closing endpoints and dismissal before the first display tick. An existing history fixture now waits for its callback instead of assuming it arrives within 20 ms.
+
+- `make` and `make test-quick-browse` pass. The build has no compiler warnings.
+- The installed build passes all 34 native scenarios in each layout, with no unavailable patches or safe mode. Reports: `build/test-sidebar-peek-origin.json` and `build/test-top-peek-origin.json`.
+- Native recordings show opening and closing from an upper navigation link and a lower release-heading link in both layouts. Frame-by-frame review confirms that dismissal travels toward the correct link in each direction. Dia was reopened normally with the original sidebar layout and profile afterward.
+- Local proof: `build/proof/peek-origin-before.mp4`, `build/proof/peek-origin-sidebar-after.mp4` and `build/proof/peek-origin-top-after.mp4`. The final recordings use the guide's silent H.264, 1120×700, 60 fps settings and remain ignored by Git.
+
+The unchanged upstream documentation gate still reports the three missing wiki pages and sidebar links above. No upstream PR has been submitted.

@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 mkdir -p build
 clang -arch arm64 -mmacosx-version-min=14.0 -fobjc-arc -O0 -Wall -Wextra -Wno-unused-parameter \
     -Isrc/dylib -framework AppKit -framework Carbon -framework QuartzCore \
-    tests/quick-browse.m tests/mini-shortcuts.m tests/mini-shortcut-settings.m tests/mini-hotkey-stub.m \
+    tests/quick-browse.m tests/peek-origin.m tests/mini-shortcuts.m tests/mini-shortcut-settings.m tests/mini-hotkey-stub.m \
     src/dylib/Patches/DiaMini/Browse/*.m src/dylib/Patches/DiaMini/Shortcuts/*.m src/dylib/Patches/Peek/*.m src/dylib/Settings/Controls.m \
     src/dylib/StdPatch/Hook.m src/dylib/StdPatch/Views.m src/dylib/StdPatch/App.m -o build/quick-browse-test
 build/quick-browse-test

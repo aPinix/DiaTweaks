@@ -12,7 +12,7 @@
     [CATransaction setCompletionBlock:^{ if (version == self.motionVersion) completion(); }];
     CABasicAnimation *expand = [CABasicAnimation animationWithKeyPath:reduce ? @"opacity" : @"transform"];
     expand.fromValue = reduce ? @(shown.opacity) : [NSValue valueWithCATransform3D:shown.transform];
-    expand.toValue = reduce ? @0 : [NSValue valueWithCATransform3D:DPPeekSqueeze(self.cardFrame, target)];
+    expand.toValue = reduce ? @0 : [NSValue valueWithCATransform3D:[self transformToFrame:target]];
     expand.duration = duration;
     expand.timingFunction = [CAMediaTimingFunction functionWithControlPoints:0.2 :0.9 :0.25 :1];
     expand.fillMode = kCAFillModeForwards; expand.removedOnCompletion = NO;

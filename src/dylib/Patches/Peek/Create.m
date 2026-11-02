@@ -32,10 +32,12 @@ DPPeekCard *DPPeekShowCard(NSWindow *window, id<DPPeekPage> page, NSPoint origin
         if (DPIsKind(view, DPDiaContentContainer)) { surface = view; break; }
     if (!surface.superview) return nil;
     DPPeekCard *peek = [[DPPeekCard alloc] initWithFrame:surface.frame];
+    peek.wantsLayer = YES;
     peek.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
     peek.pane = pane;
     peek.surface = surface;
     peek.page = page;
+    peek.clickPointInWindow = [window convertPointFromScreen:origin];
     peek.host = host;
     peek.card = DPLayerView();
     peek.card.layer.shadowOpacity = 0.35;
@@ -63,11 +65,6 @@ DPPeekCard *DPPeekShowCard(NSWindow *window, id<DPPeekPage> page, NSPoint origin
                                                                         usingBlock:^(NSNotification *note) { [weak followPane]; }];
     }
     peek.monitor = DPWatchKeys(peek);
-    // It grows out of a link-sized box where you clicked.
-    NSRect card = peek.cardFrame;
-    NSSize size = NSMakeSize(MAX(180, NSWidth(card) * 0.16), MAX(70, NSHeight(card) * 0.1));
-    NSRect seed = NSMakeRect(origin.x - size.width / 2, origin.y - size.height / 2, size.width, size.height);
-    peek.link = [peek convertRect:[window convertRectFromScreen:seed] fromView:nil];
     [peek animateIn];
     return peek;
 }

@@ -18,11 +18,6 @@ static void DPDisplayedState(CALayer *layer, CATransform3D *transform, float *op
     }
 }
 
-CATransform3D DPPeekSqueeze(NSRect card, NSRect rect) {
-    CATransform3D scale = CATransform3DMakeScale(NSWidth(rect) / MAX(1, NSWidth(card)), NSHeight(rect) / MAX(1, NSHeight(card)), 1);
-    return CATransform3DConcat(scale, CATransform3DMakeTranslation(NSMinX(rect) - NSMinX(card), NSMinY(rect) - NSMinY(card), 0));
-}
-
 @implementation DPPeekCard (Motion)
 - (void)animateIn {
     NSUInteger version = ++self.motionVersion;
@@ -31,7 +26,7 @@ CATransform3D DPPeekSqueeze(NSRect card, NSRect rect) {
     NSMutableArray *animations = [NSMutableArray new];
     if (!reduce) {
         CABasicAnimation *grow = [CABasicAnimation animationWithKeyPath:@"transform"];
-        grow.fromValue = [NSValue valueWithCATransform3D:DPPeekSqueeze(self.cardFrame, self.link)];
+        grow.fromValue = [NSValue valueWithCATransform3D:[self transformToFrame:self.originFrame]];
         grow.toValue = [NSValue valueWithCATransform3D:CATransform3DIdentity];
         grow.duration = duration;
         [animations addObject:grow];
@@ -64,8 +59,7 @@ CATransform3D DPPeekSqueeze(NSRect card, NSRect rect) {
     if (!reduce) {
         CABasicAnimation *shrink = [CABasicAnimation animationWithKeyPath:@"transform"];
         shrink.fromValue = [NSValue valueWithCATransform3D:current];
-        NSRect target = NSInsetRect(self.cardFrame, NSWidth(self.cardFrame) * 0.02, NSHeight(self.cardFrame) * 0.02);
-        shrink.toValue = [NSValue valueWithCATransform3D:DPPeekSqueeze(self.cardFrame, target)];
+        shrink.toValue = [NSValue valueWithCATransform3D:[self transformToFrame:self.originFrame]];
         shrink.duration = duration;
         [animations addObject:shrink];
     }

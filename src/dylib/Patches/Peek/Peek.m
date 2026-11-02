@@ -5,14 +5,6 @@
 // pane only if you expand or split it. Dispositions are ArcCore's own ArcWebContentsNavigationDisposition, numbered
 // differently from Chromium's: 4 there is picture-in-picture.
 enum { DPIgnoreAction = 0, DPCurrentTab = 1, DPForegroundTab = 2, DPBackgroundTab = 3, DPNewWindow = 5, DPPopup = 6 };
-static __weak NSWindow *DPPeekClickWindow;
-static NSTimeInterval DPPeekClickTime;
-
-void DPPeekRememberClick(NSWindow *window, NSEventModifierFlags flags) {
-    NSEventModifierFlags mask = NSEventModifierFlagShift | NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagControl;
-    DPPeekClickWindow = (flags & mask) == NSEventModifierFlagShift ? window : nil;
-    DPPeekClickTime = NSProcessInfo.processInfo.systemUptime;
-}
 
 // ArcCore reports a Shift-click as a popup; new tabs and windows count too.
 static BOOL DPPeekWanted(NSInteger disposition, id page) {
@@ -20,9 +12,7 @@ static BOOL DPPeekWanted(NSInteger disposition, id page) {
     NSEventModifierFlags mask = NSEventModifierFlagShift | NSEventModifierFlagCommand | NSEventModifierFlagOption | NSEventModifierFlagControl;
     BOOL held = (NSEvent.modifierFlags & mask) == NSEventModifierFlagShift;
     NSWindow *window = DPPeekWindowForPage(page) ?: NSApp.keyWindow;
-    BOOL recent = DPPeekClickWindow && DPPeekClickWindow == window
-        && NSProcessInfo.processInfo.systemUptime - DPPeekClickTime < 2;
-    return DPPeek.on && elsewhere && (held || recent);
+    return DPPeek.on && elsewhere && (held || DPPeekHasRecentClick(window));
 }
 
 // target="_blank" links and window.open arrive here with a page already made. Peek turns it down and makes its own.
@@ -33,9 +23,8 @@ static void DPWebContent_didCreate(id self, SEL _cmd, id webContents, id newWebC
     // A link opened from inside a Peek loads in that Peek, as in Arc.
     if (DPPeekShows(webContents)) return DPPeekLoad(webContents, url);
     NSWindow *window = DPPeekWindowForPage(webContents) ?: NSApp.keyWindow;
-    DPPeekClickWindow = nil;
-    NSPoint origin = NSEvent.mouseLocation;
-    dispatch_async(dispatch_get_main_queue(), ^{ DPPeekOpen(window, url, origin, self, webContents); });
+    NSPoint point = DPPeekTakeClickPoint(window);
+    dispatch_async(dispatch_get_main_queue(), ^{ DPPeekOpen(window, url, [window convertPointToScreen:point], self, webContents); });
 }
 
 // Plain links that Chromium wants anywhere but the current tab are asked about here first; Dia answers with the
@@ -47,9 +36,8 @@ static NSInteger DPWebContent_decidePolicy(id self, SEL _cmd, id webContents, id
     if (DPPeekShows(webContents)) return DPCurrentTab;
     if (!DPPeekCanOpen(webContents)) return DPCallOriginal(DPWebContent_decidePolicy, self, webContents, action);
     NSWindow *window = DPPeekWindowForPage(webContents) ?: NSApp.keyWindow;
-    DPPeekClickWindow = nil;
-    NSPoint origin = NSEvent.mouseLocation;
-    dispatch_async(dispatch_get_main_queue(), ^{ DPPeekOpen(window, url, origin, self, webContents); });
+    NSPoint point = DPPeekTakeClickPoint(window);
+    dispatch_async(dispatch_get_main_queue(), ^{ DPPeekOpen(window, url, [window convertPointToScreen:point], self, webContents); });
     return DPIgnoreAction;
 }
 
@@ -58,7 +46,7 @@ static void DPInstallPeek(void) {
     DPOnLaunch(^{
         DPPeekInstallTabSpacing();
         [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown handler:^NSEvent *(NSEvent *event) {
-            DPPeekRememberClick(event.window, event.modifierFlags);
+            DPPeekRememberClick(event.window, event.modifierFlags, event.locationInWindow);
             return event;
         }];
         // Dia's Swift classes resolve only once its runtime is up.

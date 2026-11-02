@@ -5,6 +5,8 @@
 #import "Patches/DiaMini/Browse/Launcher.h"
 #import "mini-shortcuts.h"
 
+void DPTestPeekOrigin(DPPeekCard *peek);
+
 DPPatch DPDiaMini = {.on = YES};
 DPPatch DPDiaMiniExternal;
 static NSUInteger closed, promoted, loads;
@@ -255,7 +257,7 @@ int main(void) {
 
         NSURL *url = [NSURL URLWithString:@"https://example.org/"];
         __block NSArray *suggestions;
-        DPBrowseSuggestions(source,@"",^(NSArray *items){ suggestions=items; }); drain(0.02);
+        DPBrowseSuggestions(source,@"",^(NSArray *items){ suggestions=items; }); drainUntil(^BOOL{ return suggestions != nil; });
         NSCAssert(suggestions.count==1 && [((DPBrowseSuggestion *)suggestions[0]).title isEqual:@"Recently visited"],@"empty launcher reads real profile history");
         DPBrowseRemember(source,url,@"Last Mini result");
         DPBrowseSource *other=[DPBrowseSource new]; other.browser=[FixtureBrowser new];
@@ -285,17 +287,20 @@ int main(void) {
         [mini() close]; DPDiaMiniExternal.on=NO;
         [window makeKeyAndOrderFront:nil];
         FixtureAction *action=[FixtureAction new]; action.url=url; action.navigationDisposition=5;
-        DPPeekRememberClick(window,NSEventModifierFlagShift);
+        NSPoint clicked=NSMakePoint(147,523);
+        DPPeekRememberClick(window,NSEventModifierFlagShift,clicked);
         NSCAssert([delegate webContents:sourcePage decidePolicyForNavigationAction:action]==0,@"remember Shift after the input event ends");
         drain(0.02);
         NSCAssert(DPPeekCardIn(window),@"remembered click opens the preview");
+        NSCAssert(NSEqualPoints(DPPeekCardIn(window).clickPointInWindow,clicked),@"navigation uses the original mouse-down location, not the later pointer position");
+        NSCAssert(!DPPeekHasRecentClick(window),@"a navigation consumes its remembered click");
         [DPPeekCardIn(window) close:0]; drain(0.25);
-        DPPeekRememberClick(window,NSEventModifierFlagShift|NSEventModifierFlagCommand);
+        DPPeekRememberClick(window,NSEventModifierFlagShift|NSEventModifierFlagCommand,clicked);
         NSCAssert([delegate webContents:sourcePage decidePolicyForNavigationAction:action]==1,@"Command-Shift is left to Dia");
         action.url=[NSURL URLWithString:@"mailto:test@example.com"];
-        DPPeekRememberClick(window,NSEventModifierFlagShift);
+        DPPeekRememberClick(window,NSEventModifierFlagShift,clicked);
         NSCAssert([delegate webContents:sourcePage decidePolicyForNavigationAction:action]==1 && !DPPeekCardIn(window),@"special links keep Dia's normal policy");
-        action.url=url; DPPeekRememberClick(window,0);
+        action.url=url; DPPeekRememberClick(window,0,clicked);
         NSCAssert(DPBrowseShow(url,source),@"Mini opens");
         NSCAssert(!mini().window.parentWindow && mini().source.browser == browser,@"independent Mini with same profile");
         NSCAssert([mini().address.stringValue isEqual:url.absoluteString],@"address populated before first refresh");
@@ -341,6 +346,7 @@ int main(void) {
         }
         NSCAssert(CGColorGetAlpha(peek.clip.layer.backgroundColor)==0,@"no white backing can bleed beside the compositor's edge");
         peek.frame=originalPeekFrame; peek.needsLayout=YES; [peek layoutSubtreeIfNeeded];
+        DPTestPeekOrigin(peek);
         NSPoint sidebarPoint=[window.contentView.superview convertPoint:NSMakePoint(265,55) fromView:window.contentView];
         NSView *sidebarHit=[window.contentView hitTest:sidebarPoint];
         NSCAssert(sidebarHit==sidebarButton || [sidebarHit isDescendantOf:sidebarButton],@"a revealed sidebar remains above Peek and receives clicks");
@@ -399,12 +405,15 @@ int main(void) {
         [peek close:1]; [peek close:0]; drain(0.40);
         NSCAssert(promoted==beforePromotion && closed==beforeClose+1 && !DPPeekCardIn(window),@"Escape cancels an in-flight expansion once");
         DPPeekOpen(window,url,NSMakePoint(500,500),delegate,sourcePage);
-        peek=DPPeekCardIn(window); [peek close:0];
+        peek=DPPeekCardIn(window);
+        CAAnimationGroup *opening=(id)[peek.card.layer animationForKey:@"peek"];
+        NSValue *seed=((CABasicAnimation *)opening.animations.firstObject).fromValue;
+        [peek close:0];
         CAAnimationGroup *dismiss=(id)[peek.card.layer animationForKey:@"peek"];
         NSCAssert(dismiss.duration>=0.20,@"dismissal gives the page time to fade smoothly");
         CABasicAnimation *recede=(id)dismiss.animations.firstObject;
-        CGFloat closeScale=[recede.toValue CATransform3DValue].m11;
-        NSCAssert(closeScale>0.9 && closeScale<1,@"closing gently recedes instead of collapsing the full page into a tiny link");
+        NSCAssert([recede.toValue isEqual:seed],@"closing returns to the same point and scale used by opening");
+        NSCAssert([recede.fromValue isEqual:seed],@"closing before the first display tick does not jump to full size");
         drain(0.10); NSCAssert(peek.superview,@"the live page remains attached during the close transition");
         drain(0.20);
         NSCAssert(peek.controls.alphaValue==0 && !peek.superview,@"late opening callback cannot resurrect controls");
