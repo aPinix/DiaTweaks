@@ -15,7 +15,7 @@ void DPBrowseCloseMiniExtensions(DPBrowseWindow *owner) {
 NSButton *DPBrowseMiniExtensionsButton(DPBrowseWindow *owner) {
     NSImage *image = [NSImage imageWithSystemSymbolName:@"puzzlepiece.extension" accessibilityDescription:@"Extensions"];
     image = [image imageWithSymbolConfiguration:[NSImageSymbolConfiguration configurationWithPointSize:16 weight:NSFontWeightRegular]];
-    NSButton *button = [NSButton buttonWithImage:image target:owner action:@selector(showMiniExtensions:)];
+    NSButton *button = DPBrowseHeaderButton(@"",owner,@selector(showMiniExtensions:)); button.image = image;
     button.bordered = NO; button.toolTip = @"Extensions"; button.accessibilityLabel = @"Extensions";
     button.identifier = @"DiaMiniExtensionsButton"; button.frame = NSMakeRect(0,0,26,24); return button;
 }

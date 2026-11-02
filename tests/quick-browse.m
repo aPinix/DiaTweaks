@@ -13,6 +13,7 @@ void DPTestSiteSearch(DPBrowseSource *source);
 void DPTestCommandBar(DPBrowseSource *source);
 void DPTestMiniBrowserChrome(DPBrowseSource *source);
 void DPTestMiniExtensions(DPBrowseSource *source);
+void DPTestMiniHeaderDrag(void);
 void DPTestMiniWindowCommand(DPBrowseSource *source);
 void DPTestMiniDestinations(void);
 void DPTestMiniDestinationTabMenu(void);
@@ -468,7 +469,7 @@ int main(void) {
         for (CABasicAnimation *a in group.animations) NSCAssert(![a.keyPath isEqual:@"transform"],@"Reduce Motion uses opacity");
         DPDiaMini.on=NO; DPBrowseApply(&DPDiaMini);
         NSCAssert(DPPeekCardIn(window) && !DPBrowseWindows.count && DPNewMiniItem.hidden,@"Mini switch leaves Peek open");
-        [peek close:0]; drain(0.15);
+        [peek close:0]; drainUntil(^BOOL{ return !DPPeekCardIn(window); });
         NSCAssert(!DPPeekCardIn(window),@"reduced-motion cleanup");
         extern void DPTestInputBehavior(DPBrowseSource *source);
         DPTestInputBehavior(source);
@@ -482,6 +483,7 @@ int main(void) {
         DPDiaMini.on = NO; DPBrowseApply(&DPDiaMini);
         DPTestMiniWindowCommand(source);
         DPTestMiniExtensions(source);
+        DPTestMiniHeaderDrag();
         [window close];
         [NSUserDefaults.standardUserDefaults removePersistentDomainForName:shortcutDomain];
         puts("PASS: Mini, scoped site search, configurable Command Bar and native tab handoff; Peek motion, badges and Reduce Motion");

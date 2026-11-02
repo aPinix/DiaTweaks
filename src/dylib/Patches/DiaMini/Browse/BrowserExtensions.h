@@ -13,6 +13,7 @@
 @property BOOL available, ready;
 @end
 DPMiniExtensionCatalog *DPBrowseMiniExtensionCatalog(DPBrowseWindow *owner);
+NSImage *DPBrowseInstalledExtensionIcon(id context, NSString *identifier, NSString *version);
 
 @interface DPMiniExtensionList : NSViewController <NSTableViewDataSource, NSTableViewDelegate, NSSearchFieldDelegate, NSPopoverDelegate>
 @property(weak) DPBrowseWindow *owner;

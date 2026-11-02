@@ -5,7 +5,7 @@
 - (instancetype)initWithOwner:(DPBrowseWindow *)owner {
     if (!(self = [super initWithFrame:NSMakeRect(0,0,300,30)])) return nil;
     self.owner = owner; self.identifier = @"DiaMiniAddressPill"; self.wantsLayer = YES; self.layer.cornerRadius = 6;
-    self.editButton = [NSButton buttonWithTitle:@"" target:owner action:@selector(editAddress:)];
+    self.editButton = DPBrowseHeaderButton(@"",owner,@selector(editAddress:));
     self.editButton.bordered = NO; self.editButton.accessibilityLabel = @"Address — search or enter a URL"; [self addSubview:self.editButton];
     self.searchIcon = [[NSImageView alloc] initWithFrame:NSMakeRect(8,7,16,16)];
     self.searchIcon.image = [NSImage imageWithSystemSymbolName:@"magnifyingglass" accessibilityDescription:nil]; [self addSubview:self.searchIcon];
@@ -14,7 +14,8 @@
     self.domain.maximumNumberOfLines = 1; self.domain.cell.wraps = NO;
     self.domain.accessibilityLabel = @"Current domain"; [self addSubview:self.domain];
     self.progressView = [DPMiniBrowserProgress new]; self.progressView.hidden = YES; [self addSubview:self.progressView];
-    self.linkButton = [NSButton buttonWithImage:[NSImage imageWithSystemSymbolName:@"link" accessibilityDescription:@"Copy link"] target:owner action:@selector(copyLink:)];
+    self.linkButton = DPBrowseHeaderButton(@"",owner,@selector(copyLink:));
+    self.linkButton.image = [NSImage imageWithSystemSymbolName:@"link" accessibilityDescription:@"Copy link"];
     self.linkButton.bordered = NO; self.linkButton.toolTip = @"Copy link"; self.linkButton.accessibilityLabel = @"Copy link"; [self addSubview:self.linkButton];
     self.extensionButton = DPBrowseMiniExtensionsButton(owner); [self addSubview:self.extensionButton];
     [self updateColors]; return self;

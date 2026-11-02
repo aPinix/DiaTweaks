@@ -31,11 +31,14 @@ DPMiniExtensionCatalog *DPBrowseMiniExtensionCatalog(DPBrowseWindow *owner) {
         NSMutableArray *items = [NSMutableArray array]; NSMutableSet *seen = [NSMutableSet set];
         for (id info in infos) {
             id identifier = DPExtensionGet(info,@selector(id));
-            if (![identifier isKindOfClass:NSString.class] || ![identifier length] || [seen containsObject:identifier]) continue;
+            if (![identifier isKindOfClass:NSString.class] || ![identifier length] || [seen containsObject:identifier]
+                || !DPExtensionFlag(info,@selector(enabled))) continue;
             DPMiniExtensionItem *item = [DPMiniExtensionItem new]; item.identifier = identifier;
             id name = DPExtensionGet(info,@selector(name));
             item.name = [name isKindOfClass:NSString.class] && [name length] ? name : @"Unnamed extension";
-            id icon = DPExtensionGet(info,@selector(icon)); item.icon = [icon isKindOfClass:NSImage.class] ? icon : nil;
+            id icon = DPExtensionGet(info,@selector(icon));
+            item.icon = DPBrowseInstalledExtensionIcon(context,identifier,DPExtensionGet(info,@selector(version)))
+                ?: ([icon isKindOfClass:NSImage.class] && [icon isValid] ? icon : nil);
             item.enabled = DPExtensionFlag(info,@selector(enabled)); item.hasAction = DPExtensionFlag(info,@selector(hasAction));
             [items addObject:item]; [seen addObject:identifier];
         }
@@ -43,7 +46,7 @@ DPMiniExtensionCatalog *DPBrowseMiniExtensionCatalog(DPBrowseWindow *owner) {
             NSComparisonResult order = [a.name localizedCaseInsensitiveCompare:b.name];
             return order == NSOrderedSame ? [a.identifier compare:b.identifier] : order;
         }];
-        catalog.ready = YES; catalog.message = catalog.items.count ? @"" : @"No extensions installed in this profile.";
+        catalog.ready = YES; catalog.message = catalog.items.count ? @"" : @"No enabled extensions in this profile.";
     } @catch (NSException *exception) {
         catalog.available = catalog.ready = NO; catalog.items = @[];
     }

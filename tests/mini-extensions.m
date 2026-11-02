@@ -39,10 +39,10 @@ void DPTestMiniExtensions(DPBrowseSource *source) {
         DPExtensionInfo(@"background",@"Background",YES,NO), DPExtensionInfo(@"action",@"Duplicate",YES,YES), @42];
     owner.profileContext = context;
     DPMiniExtensionCatalog *catalog = DPBrowseMiniExtensionCatalog(owner);
-    NSCAssert(catalog.available && catalog.ready && catalog.items.count == 3 && [catalog.items.firstObject.name isEqual:@"Action"],
+    NSCAssert(catalog.available && catalog.ready && catalog.items.count == 2 && [catalog.items.firstObject.name isEqual:@"Action"],
         @"catalog reads only the Mini profile, sorts names and ignores duplicate or malformed entries");
-    NSCAssert([catalog.items[0].status isEqual:@"Open in Dia to use"] && [catalog.items[1].status isEqual:@"No toolbar action"]
-        && [catalog.items[2].status isEqual:@"Disabled"], @"action, background-only and disabled states are explicit");
+    NSCAssert([catalog.items[0].status isEqual:@"Open in Dia to use"] && [catalog.items[1].status isEqual:@"No toolbar action"], @"only enabled extensions enter the catalogue");
+    context.extensions.values = @[DPExtensionInfo(@"long",longName,YES,YES)];
     DPMiniExtensionList *list = [DPMiniExtensionList new]; list.owner = owner; [list loadView];
     list.search.stringValue = @"LONG EXTENSION"; [list filter:nil];
     NSCAssert(list.filtered.count == 1 && [list.filtered.firstObject.name isEqual:longName], @"extension names search case-insensitively");
@@ -58,8 +58,8 @@ void DPTestMiniExtensions(DPBrowseSource *source) {
     context.extensions.ready = NO; [list reloadCatalog:nil];
     NSCAssert(list.catalog.available && !list.catalog.ready && !list.filtered.count
         && [list.status.stringValue isEqual:@"Extensions are starting…"], @"initializing extension systems do not look like an empty installed catalog");
-    context.extensions.ready = YES; context.extensions.values = @[]; [list reloadCatalog:nil];
-    NSCAssert(list.catalog.ready && [list.status.stringValue isEqual:@"No extensions installed in this profile."], @"an empty installed list has its own state");
+    context.extensions.ready = YES; context.extensions.values = @[DPExtensionInfo(@"disabled",@"Disabled only",NO,YES)]; [list reloadCatalog:nil];
+    NSCAssert(list.catalog.ready && [list.status.stringValue isEqual:@"No enabled extensions in this profile."], @"an empty enabled list has its own state");
     context.extensions.values = @42; [list reloadCatalog:nil];
     NSCAssert(!list.catalog.available && !list.filtered.count, @"malformed native catalog replies are unavailable");
     owner.profileContext = [NSObject new]; [list reloadCatalog:nil];

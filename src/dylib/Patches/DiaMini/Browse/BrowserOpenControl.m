@@ -4,7 +4,7 @@
 - (instancetype)initWithOwner:(DPBrowseWindow *)owner {
     if (!(self = [super initWithFrame:NSMakeRect(0,0,150,30)])) return nil;
     self.owner = owner; self.identifier = @"DiaMiniOpenControl"; self.wantsLayer = YES; self.layer.cornerRadius = 6;
-    self.primary = [NSButton buttonWithTitle:@"" target:owner action:@selector(promote:)]; self.primary.bordered = NO;
+    self.primary = DPBrowseHeaderButton(@"",owner,@selector(promote:)); self.primary.bordered = NO;
     self.primary.toolTip = @"Keep this page as a Dia tab (⌘O)"; [self addSubview:self.primary];
     self.titleLabel = [NSTextField labelWithString:@""]; self.titleLabel.font = [NSFont systemFontOfSize:13 weight:NSFontWeightSemibold];
     self.titleLabel.lineBreakMode = NSLineBreakByTruncatingTail; self.titleLabel.maximumNumberOfLines = 1;
@@ -13,7 +13,8 @@
     self.shortcutLabel.wantsLayer = YES; self.shortcutLabel.layer.cornerRadius = 3;
     self.titleLabel.accessibilityElement = self.shortcutLabel.accessibilityElement = NO;
     [self addSubview:self.titleLabel]; [self addSubview:self.shortcutLabel]; [self setDestinationTitle:@"Dia"];
-    self.arrow = [NSButton buttonWithImage:[NSImage imageWithSystemSymbolName:@"chevron.down" accessibilityDescription:@"Choose Dia destination"] target:owner action:@selector(showOpenDestinations:)];
+    self.arrow = DPBrowseHeaderButton(@"",owner,@selector(showOpenDestinations:));
+    self.arrow.image = [NSImage imageWithSystemSymbolName:@"chevron.down" accessibilityDescription:@"Choose Dia destination"];
     self.arrow.bordered = NO; self.arrow.accessibilityLabel = @"Choose Dia destination"; [self addSubview:self.arrow];
     [self updateColors]; return self;
 }
