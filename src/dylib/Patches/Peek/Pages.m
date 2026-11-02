@@ -5,44 +5,6 @@
 // it isn't a tab until it's expanded or split: then Dia is handed the live page the way it's handed the page a link
 // opens, so nothing reloads. Closing the Peek discards it. Until then Dia doesn't manage the page, so popups and
 // permission prompts from inside a Peek wait until it's expanded.
-static NSMapTable *DPPeekFactories;  // Each page -> the browser context or browser that made it.
-static NSMapTable *DPPeekHosts;
-
-NSWindow *DPPeekWindowForPage(id page) { return ((NSView *)[DPPeekHosts objectForKey:page]).window; }
-
-static id DPContext_create(id self, SEL _cmd, id configuration) {
-    id page = DPCallOriginal(DPContext_create, self, configuration);
-    if (page) [DPPeekFactories setObject:self forKey:page];
-    return page;
-}
-
-static id DPBrowser_create(id self, SEL _cmd, id configuration) {
-    id page = DPCallOriginal(DPBrowser_create, self, configuration);
-    if (page) [DPPeekFactories setObject:self forKey:page];
-    return page;
-}
-
-static void DPPeek_restored(id self, SEL _cmd, id browser, id page, id session) {
-    if (browser && page) [DPPeekFactories setObject:browser forKey:page];
-    DPCallOriginal(DPPeek_restored, self, browser, page, session);
-}
-static void DPPeek_created(id self, SEL _cmd, id browser, id page, BOOL active) {
-    if (browser && page) [DPPeekFactories setObject:browser forKey:page];
-    DPCallOriginal(DPPeek_created, self, browser, page, active);
-}
-
-// Dia attaching a Peek's page somewhere else, such as when it's selected, means the card has to let go of it, or
-// Dia's own pane stays white.
-static void DPPage_attach(id self, SEL _cmd, NSView *host) {
-    for (NSWindow *window in NSApp.windows) {
-        DPPeekCard *peek = DPPeekCardIn(window);
-        if (peek.page == self && host != peek.host) [peek handOver];
-    }
-    if (host) [DPPeekHosts setObject:host forKey:self];
-    DPCallOriginal(DPPage_attach, self, host);
-}
-
-BOOL DPPeekCanOpen(id source) { return source && [DPPeekFactories objectForKey:source]; }
 BOOL DPPeekCanLoad(NSURL *url) {
     if (![url isKindOfClass:NSURL.class] || !url.host.length) return NO;
     return [@[@"http", @"https"] containsObject:url.scheme.lowercaseString];
@@ -70,7 +32,7 @@ static BOOL DPPeekGive(id page, id delegate, id source, NSURL *url, NSInteger di
 
 // The page is set up for drawing, attached to a card, then loaded. If no card can show it, it opens as a tab.
 void DPPeekOpen(NSWindow *window, NSURL *url, NSPoint origin, id delegate, id source) {
-    id factory = source ? [DPPeekFactories objectForKey:source] : nil;
+    id factory = DPPeekFactory(source);
     Class configuration = objc_getClass(DPDiaWebContentsConfiguration);
     if (!window || !DPPeekCanLoad(url) || !factory || !configuration || DPPeekCardIn(window)) return;
     id page = ((id (*)(id, SEL, id))objc_msgSend)(factory, @selector(createWebContents:), [configuration new]);
@@ -104,17 +66,3 @@ void DPPeekOpen(NSWindow *window, NSURL *url, NSPoint origin, id delegate, id so
 }
 
 @end
-
-void DPPeekInstallPages(void) {
-    DPPeekFactories = [NSMapTable weakToWeakObjectsMapTable];
-    DPPeekHosts = [NSMapTable weakToWeakObjectsMapTable];
-    DPHook(DPDiaBrowserContext, @selector(createWebContents:), (IMP)DPContext_create);
-    DPHook(DPDiaBrowser, @selector(createWebContents:), (IMP)DPBrowser_create);
-    DPHook(DPDiaBrowserDelegate, @selector(browser:didRestoreWebContents:withSessionId:), (IMP)DPPeek_restored);
-    DPHook(DPDiaBrowserDelegate, @selector(browser:didCreateNewWebContents:isActive:), (IMP)DPPeek_created);
-    DPHook(DPDiaWebContents, @selector(attachToPaneHostView:), (IMP)DPPage_attach);
-    // A Peek can't outlast the window it's in.
-    [NSNotificationCenter.defaultCenter addObserverForName:NSWindowWillCloseNotification object:nil queue:nil usingBlock:^(NSNotification *note) {
-        [DPPeekCardIn(note.object) close:0];
-    }];
-}

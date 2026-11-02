@@ -1,4 +1,5 @@
 #import "Patches/Peek/Peek.h"
+#import "Patches/Peek/Indicator.h"
 
 // Arc's Peek: Shift-click a link and it opens in a card over the page you're on, then becomes a tab or a split view
 // pane only if you expand or split it. Dispositions are ArcCore's own ArcWebContentsNavigationDisposition, numbered
@@ -55,6 +56,7 @@ static NSInteger DPWebContent_decidePolicy(id self, SEL _cmd, id webContents, id
 static void DPInstallPeek(void) {
     DPPeekInstallPages();
     DPOnLaunch(^{
+        DPPeekInstallTabSpacing();
         [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown handler:^NSEvent *(NSEvent *event) {
             DPPeekRememberClick(event.window, event.modifierFlags);
             return event;
@@ -69,16 +71,6 @@ static void DPApplyPeek(DPPatch *patch) {
     if (!patch->on) for (NSWindow *window in NSApp.windows) [DPPeekCardIn(window) close:0];
 }
 
-// Nothing shows until a Shift-click, so it checks the link hooks are the ones answering.
-static NSString *DPVerifyPeek(DPPatch *patch) {
-    Class delegate = objc_getClass(DPDiaWebContent);
-    if (class_getMethodImplementation(delegate, @selector(webContents:decidePolicyForNavigationAction:)) != (IMP)DPWebContent_decidePolicy)
-        return @"link clicks don't reach Peek";
-    if (class_getMethodImplementation(delegate, @selector(webContents:didCreateNewWebContent:targetURL:disposition:)) != (IMP)DPWebContent_didCreate)
-        return @"new windows don't reach Peek";
-    return nil;
-}
-
 DP_PATCH(DPPeek) {
     .key = @"peek",
     .order = 210,
@@ -87,7 +79,8 @@ DP_PATCH(DPPeek) {
     .symbol = @"eye.fill",
     .tint = @"systemMintColor",
     .section = @"Browsing",
-    .classes = DPClasses(DPDiaBrowserContext, DPDiaWebContents, DPDiaWebContentsConfiguration, DPDiaContentPane),
+    .classes = DPClasses(DPDiaBrowserContext, DPDiaWebContents, DPDiaWebContentsConfiguration,
+        DPDiaContentPane, DPDiaTabView, DPDiaTabContentView, DPDiaFavoriteTab),
     .install = DPInstallPeek,
     .apply = DPApplyPeek,
     .verify = DPVerifyPeek,

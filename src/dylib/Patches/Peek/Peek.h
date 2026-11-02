@@ -26,6 +26,7 @@ extern DPPatch DPPeek;
 - (void)close:(NSInteger)exit;  // 0 closes, 1 opens it as a tab, 2 in split view: the tags of its buttons.
 - (void)handOver;               // Dia showed the page elsewhere: the card lets go of it at once.
 - (void)stopWatching;
+- (void)followPane;
 @end
 
 @interface DPPeekCard (Motion)  // Motion.m
@@ -51,6 +52,7 @@ NSView *DPPeekControls(id target, SEL action);                                  
 // Pages.m
 void DPPeekInstallPages(void);
 BOOL DPPeekCanOpen(id source);  // Peek knows which part of Dia made `source`, so can make a page beside it.
+id DPPeekFactory(id source);
 BOOL DPPeekCanLoad(NSURL *url);
 void DPPeekOpen(NSWindow *window, NSURL *url, NSPoint origin, id delegate, id source);
 BOOL DPPeekShows(id page);
@@ -61,3 +63,4 @@ void DPPeekStartIndicator(DPPeekCard *peek);
 void DPPeekStopIndicator(DPPeekCard *peek);
 void DPPeekRememberClick(NSWindow *window, NSEventModifierFlags flags);
 NSWindow *DPPeekWindowForPage(id page);
+NSString *DPVerifyPeek(DPPatch *patch);

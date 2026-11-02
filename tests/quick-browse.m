@@ -6,6 +6,7 @@
 DPPatch DPDiaMini = {.on = YES};
 DPPatch DPDiaMiniExternal;
 static NSUInteger closed, promoted, loads;
+static NSUInteger tabCloseClicks;
 static BOOL reduceMotion;
 
 @interface FixtureHistoryItem : NSObject
@@ -118,10 +119,37 @@ static BOOL reduceMotion;
     browser.context=context; browser.delegate=delegate; browser.windowIdentifier=identifier; return browser;
 }
 @end
+@interface FixtureTabContent : NSView
+@property(strong) NSButton *closeButton;
+@property(strong) NSTextField *titleLabel;
+@end
+@implementation FixtureTabContent
+- (instancetype)initWithFrame:(NSRect)frame {
+    if ((self=[super initWithFrame:frame])) {
+        _closeButton=[NSButton buttonWithTitle:@"×" target:self action:@selector(closeTab:)];
+        _closeButton.accessibilityIdentifier=@"tabCloseButton"; [self addSubview:_closeButton];
+        _titleLabel=[NSTextField labelWithString:@"A long tab title that must leave room for the close button and Peek favicon"];
+        _titleLabel.lineBreakMode=NSLineBreakByTruncatingTail; [self addSubview:_titleLabel];
+    }
+    return self;
+}
+- (void)layout {
+    [super layout];
+    self.closeButton.frame=NSMakeRect(NSWidth(self.bounds)-24,10,16,16);
+    self.titleLabel.frame=NSMakeRect(30,10,MAX(0,NSWidth(self.bounds)-(self.closeButton.hidden?38:58)),16);
+}
+- (void)closeTab:(id)sender { tabCloseClicks++; }
+@end
 @interface FixtureTab : NSView
 @property BOOL selected;
 @end
 @implementation FixtureTab
+- (void)layout {
+    [super layout];
+    for (NSView *child in self.subviews) if (DPIsKind(child,DPDiaTabContentView)) {
+        child.frame=NSInsetRect(self.bounds,6,0); child.needsLayout=YES;
+    }
+}
 - (NSString *)accessibilityRole { return NSAccessibilityRadioButtonRole; }
 - (NSString *)accessibilityIdentifier { return @"tab"; }
 - (id)accessibilityValue { return @(self.selected); }
@@ -145,6 +173,10 @@ static void alias(Class base, const char *name) {
     Class cls = objc_allocateClassPair(base,name,0); NSCAssert(cls,@"unique class"); objc_registerClassPair(cls);
 }
 static void drain(double seconds) { [NSRunLoop.mainRunLoop runUntilDate:[NSDate dateWithTimeIntervalSinceNow:seconds]]; }
+static void drainUntil(BOOL (^ready)(void)) {
+    NSDate *deadline=[NSDate dateWithTimeIntervalSinceNow:1];
+    while (!ready() && deadline.timeIntervalSinceNow>0) drain(0.01);
+}
 static DPBrowseWindow *mini(void) { return DPBrowseWindows.anyObject; }
 
 int main(void) {
@@ -157,6 +189,7 @@ int main(void) {
         alias(FixtureDelegate.class,DPDiaWebContent); alias(NSView.class,DPDiaContentPane);
         alias(FixtureHistoryOptions.class,"ArcHistoryQueryOptions");
         alias(FixtureTab.class,DPDiaTabView); alias(NSView.class,DPDiaFavoriteTab);
+        alias(FixtureTabContent.class,DPDiaTabContentView);
         alias(NSView.class,"FixtureSelectionOutlineView");
         DPHookClass(NSWorkspace.class,@selector(accessibilityDisplayShouldReduceMotion),(IMP)reduced);
         NSApp.mainMenu = [NSMenu new];
@@ -186,6 +219,8 @@ int main(void) {
         window.accessibilityIdentifier=@"bigBrowserWindow-fixture";
         window.identifier=@"fixture";
         FixtureTab *row = [[objc_getClass(DPDiaTabView) alloc] initWithFrame:NSMakeRect(0,620,220,37)]; row.selected=YES;
+        FixtureTabContent *tabContent=[[objc_getClass(DPDiaTabContentView) alloc] initWithFrame:NSMakeRect(6,0,208,37)];
+        [row addSubview:tabContent]; row.needsLayout=YES; [row layoutSubtreeIfNeeded];
         [window.contentView addSubview:row];
         NSView *pane = [[objc_getClass(DPDiaContentPane) alloc] initWithFrame:NSMakeRect(220,0,780,700)];
         [window.contentView addSubview:pane];
@@ -208,8 +243,11 @@ int main(void) {
         DPBrowseRemember(source,url,@"Last Mini result");
         DPBrowseSource *other=[DPBrowseSource new]; other.browser=[FixtureBrowser new];
         NSCAssert(DPBrowseRecents(source).count==1 && !DPBrowseRecents(other).count,@"recent fallback stays with its source profile");
-        DPBrowseShowLauncher(); DPMiniLauncher *launcher=DPCurrentMiniLauncher; drain(0.03);
-        NSCAssert(launcher && launcher.source.browser==browser && launcher.suggestions.count==2,@"temporary search box shows recent results");
+        DPBrowseShowLauncher(); DPMiniLauncher *launcher=DPCurrentMiniLauncher;
+        drainUntil(^BOOL{ return launcher.suggestions.count==2; });
+        NSCAssert(launcher && launcher.source.browser==browser && launcher.suggestions.count==2,
+            @"temporary search box shows recent results (launcher=%@ source=%@ expected=%@ count=%lu current=%@)",
+            launcher,launcher.source.browser,browser,launcher.suggestions.count,DPCurrentMiniLauncher);
         NSCAssert(launcher.table.selectedRow==0,@"favicon updates preserve the highlighted result");
         launcher.search.stringValue=@"first"; [launcher query]; launcher.search.stringValue=@"second"; [launcher query]; drain(0.03);
         NSCAssert([launcher.suggestions.firstObject.url.path isEqual:@"/second"],@"out-of-order suggestions cannot replace the latest query");
@@ -271,6 +309,19 @@ int main(void) {
         NSCAssert(peek && peek.pane == pane && peek.superview == window.contentView,@"Peek covers the page only");
         NSCAssert(DPPeekSelectedTab(window.contentView)==(id)row,@"native source row found");
         NSCAssert(DPFindView(window.contentView,^BOOL(NSView *v){ return [v.accessibilityLabel isEqual:@"Peek open"]; }),@"source row shows a live badge");
+        NSView *rowBadge=DPFindView(window.contentView,^BOOL(NSView *v){ return [v.accessibilityLabel isEqual:@"Peek open"]; });
+        NSRect closeRect=[window.contentView convertRect:tabContent.closeButton.bounds fromView:tabContent.closeButton];
+        NSCAssert(NSMaxX(closeRect)+4<=NSMinX(rowBadge.frame),@"native close button sits left of the favicon with a gap");
+        [tabContent.closeButton performClick:nil]; NSCAssert(tabCloseClicks==1,@"native close action is preserved");
+        for (NSUInteger i=0;i<3;i++) { row.needsLayout=YES; [row layoutSubtreeIfNeeded]; }
+        NSCAssert(NSWidth(tabContent.frame)==184,@"repeated native layouts do not consume more tab width");
+        tabContent.closeButton.hidden=YES; tabContent.needsLayout=YES; [tabContent layoutSubtreeIfNeeded];
+        NSRect titleRect=[window.contentView convertRect:tabContent.titleLabel.bounds fromView:tabContent.titleLabel];
+        NSCAssert(NSMaxX(titleRect)<NSMinX(rowBadge.frame),@"title leaves the favicon slot free without hovering");
+        tabContent.closeButton.hidden=NO; tabContent.needsLayout=YES; [tabContent layoutSubtreeIfNeeded];
+        row.frame=NSMakeRect(0,620,180,32); row.needsLayout=YES; [row layoutSubtreeIfNeeded];
+        NSCAssert(NSWidth(tabContent.frame)==144,@"reservation follows a narrower horizontal-size tab");
+        row.frame=NSMakeRect(0,620,220,37); row.needsLayout=YES; [row layoutSubtreeIfNeeded];
         NSCAssert([peek.backdropLayer animationForKey:@"DiaTweaks.Peek.Depth"],@"background depth animation installed");
         NSCAssert(fabs(DPPeekDepth(NSMakeRect(0,0,800,600),0.975).m41-10)<0.01,@"depth anchored at center");
         beforeClose=closed; beforePromotion=promoted; NSUInteger beforeLoads=loads;
@@ -281,6 +332,7 @@ int main(void) {
             @"expanded page becomes a tab without reloading or closing it");
         NSCAssert(![pane.layer animationForKey:@"DiaTweaks.Peek.Depth"],@"background restored after expansion");
         NSCAssert(!DPFindView(window.contentView,^BOOL(NSView *v){ return [v.accessibilityLabel isEqual:@"Peek open"]; }),@"source badge removed with the card");
+        NSCAssert(NSWidth(tabContent.frame)==208,@"closing Peek restores the tab's full native width");
 
         DPPeekOpen(window,url,NSMakePoint(500,500),delegate,sourcePage);
         peek=DPPeekCardIn(window); beforePromotion=promoted; beforeClose=closed;

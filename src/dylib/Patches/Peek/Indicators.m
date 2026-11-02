@@ -32,6 +32,12 @@ static char DPIndicatorKey;
         : [root convertRect:[peek.window convertRectFromScreen:self.element.accessibilityFrame] fromView:nil];
     BOOL hidden = NSIsEmptyRect(row) || !NSIntersectsRect(root.bounds, row) || self.row.hiddenOrHasHiddenAncestor;
     BOOL tile = DPIsKind(self.row, DPDiaFavoriteTab);
+    NSView *reserved = tile ? nil : self.row;
+    if (self.reservedRow != reserved) {
+        DPPeekRestoreTabSpace(self.reservedRow);
+        self.reservedRow = reserved;
+    }
+    DPPeekReserveTabSpace(reserved);
     self.badge.hidden = hidden; self.outline.hidden = hidden || !tile;
     self.badge.frame = DPPeekIndicatorFrame(row, tile, root.flipped);
     self.outline.frame = NSInsetRect(row, 1, 1);
@@ -71,6 +77,7 @@ void DPPeekStartIndicator(DPPeekCard *peek) {
 
 void DPPeekStopIndicator(DPPeekCard *peek) {
     DPPeekIndicator *state = DPGet(peek, &DPIndicatorKey);
+    DPPeekRestoreTabSpace(state.reservedRow);
     [state.timer invalidate]; [state.badge removeFromSuperview]; [state.outline removeFromSuperview];
     DPSet(peek, &DPIndicatorKey, nil);
 }

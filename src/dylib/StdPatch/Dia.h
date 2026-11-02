@@ -27,6 +27,7 @@
 #define DPDiaWebContentsConfiguration "ArcWebContentsConfiguration"
 #define DPDiaWebContent         "_TtC3ADK18WebContentChromium"  // Dia's delegate for each page. A Swift class: look it up after launch.
 #define DPDiaTabView            "_TtC5TabUI7TabView"
+#define DPDiaTabContentView     "_TtC5TabUI14TabContentView"
 #define DPDiaFavoriteTab        "_TtC5TabUI15TabDockItemView"
 #define DPDiaFavoriteSelectionSuffix "SelectionOutlineView"
 #define DPDiaHistoryQueryOptions "ArcHistoryQueryOptions"

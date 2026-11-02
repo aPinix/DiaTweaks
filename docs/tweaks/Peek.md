@@ -8,7 +8,7 @@ Enable **Settings → Patches → Browsing → Peek**, or `diatweaks enable peek
 - Press Escape or ⌘W, use the close button, or click outside the card to dismiss it.
 - Click **Open as Tab** or press ⌘O to expand the card into a regular tab. The existing live page keeps its state and navigation history.
 - Use the split button to animate the preview into Dia’s split view.
-- A favicon badge identifies the source tab: inside the right edge for a row, or overlapping the top-right corner for a pinned tile. It updates as the preview’s favicon loads and disappears when Peek closes.
+- A favicon badge identifies the source tab: inside the right edge for a row, or overlapping the top-right corner for a pinned tile. A tab row reserves a separate slot, keeping Dia’s close button to the favicon’s left and shortening long titles as needed. The badge updates as the preview’s favicon loads and disappears when Peek closes; the row then regains its full width.
 
 Only one Peek stays open per source window. It follows that window when moved or resized and closes with it. Turning the patch off closes its previews immediately. It works with both sidebar and top tabs.
 
