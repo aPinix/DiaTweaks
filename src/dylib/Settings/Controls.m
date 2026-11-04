@@ -60,8 +60,9 @@ static NSSwitch *DPSwitchIn(NSView *view) {
 @implementation DPLinkRowView
 - (NSView *)hitTest:(NSPoint)point {
     NSView *hit = [super hitTest:point];
-    BOOL control = [hit isKindOfClass:NSSwitch.class] || [hit isKindOfClass:NSButton.class];
-    return !hit || (control && ((NSControl *)hit).enabled) || hit.toolTip ? hit : self;
+    BOOL control = [hit isKindOfClass:NSSwitch.class] || [hit isKindOfClass:NSButton.class]
+        || [hit isKindOfClass:NSSlider.class];
+    return !hit || (control && ((NSControl *)hit).enabled) || hit.toolTip || DPHintOf(hit) ? hit : self;
 }
 - (void)mouseDown:(NSEvent *)event {}
 - (void)mouseUp:(NSEvent *)event {
@@ -96,8 +97,21 @@ NSView *DPLinkRow(NSView *row, NSString *title, void (^open)(void)) {
     return link;
 }
 
-NSImageView *DPSymbol(NSString *symbol, CGFloat size, NSColor *color) {
-    NSImageView *view = [NSImageView imageViewWithImage:[NSImage imageWithSystemSymbolName:symbol accessibilityDescription:nil]];
+@interface NSImage (DPPrivateSymbols)
++ (NSImage *)imageWithPrivateSystemSymbolName:(NSString *)name accessibilityDescription:(NSString *)description;
+@end
+
+// The first of `symbols` this macOS has, public or private, like the emoji face Messages uses. NSImageView throws on a
+// missing one, which crashed Settings.
+NSImageView *DPSymbol(NSString *symbols, CGFloat size, NSColor *color) {
+    NSImage *image;
+    for (NSString *symbol in [symbols componentsSeparatedByString:@" "]) {
+        image = [NSImage imageWithSystemSymbolName:symbol accessibilityDescription:nil];
+        if (!image && [NSImage respondsToSelector:@selector(imageWithPrivateSystemSymbolName:accessibilityDescription:)])
+            image = [NSImage imageWithPrivateSystemSymbolName:symbol accessibilityDescription:nil];
+        if (image) break;
+    }
+    NSImageView *view = image ? [NSImageView imageViewWithImage:image] : [NSImageView new];
     view.symbolConfiguration = [NSImageSymbolConfiguration configurationWithPointSize:size weight:NSFontWeightSemibold];
     view.contentTintColor = color;
     return view;

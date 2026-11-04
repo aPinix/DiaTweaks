@@ -2,7 +2,7 @@
 #include <libproc.h>
 
 // Apple's iCloud Passwords extension asks for this host by name, and Chromium prefers a user's copy of a host over the
-// system's, so registering it here sends the extension to diapatch, which relays it through the original Dia.
+// system's, so registering it here sends the extension to diapatch, which has the original Dia start Apple's helper.
 
 extern DPPatch DPICloudPasswords;
 
@@ -38,18 +38,19 @@ static void DPRegisterHost(BOOL on) {
     [[NSJSONSerialization dataWithJSONObject:manifest options:NSJSONWritingPrettyPrinted error:nil] writeToFile:DPHostManifestPath() atomically:YES];
 }
 
-// The relay quits the original Dia a few seconds after this one quits. Opened again before then, Dia would find it
-// still running and refuse to start ("Dia is already open"), so it's stopped first; this runs before Dia checks.
+// The relay quits the original Dia a few seconds after this one quits, and a copy that starts Apple's helper or answers
+// a passkey can be cut short. Opened again while one runs, Dia would refuse to start ("Dia is already open"), so it's
+// stopped first; this runs before Dia checks.
 static void DPStopOriginalDia(void) {
-    char original[PATH_MAX], path[PROC_PIDPATHINFO_MAXSIZE];
-    NSString *dia = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES).firstObject
+    char path[PROC_PIDPATHINFO_MAXSIZE];
+    NSString *pristine = [NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES).firstObject
         stringByAppendingPathComponent:@"DiaPatches/pristine/Dia.app/Contents/MacOS/Dia"];
-    if (!realpath(dia.fileSystemRepresentation, original)) return;
+    NSArray<NSString *> *originals = @[ pristine.stringByResolvingSymlinksInPath, @"/Applications/.DiaTweaks/Dia.app/Contents/MacOS/Dia" ];
     int capacity = proc_listallpids(NULL, 0) + 64;
     pid_t pids[capacity];
     int count = proc_listallpids(pids, capacity * (int)sizeof *pids);
     for (int i = 0; i < count; i++) {
-        if (proc_pidpath(pids[i], path, sizeof path) <= 0 || strcmp(path, original)) continue;
+        if (proc_pidpath(pids[i], path, sizeof path) <= 0 || ![originals containsObject:@(path)]) continue;
         kill(pids[i], SIGKILL);
         for (int tries = 0; tries < 50 && kill(pids[i], 0) == 0; tries++) usleep(20000);
     }
@@ -65,11 +66,10 @@ static void DPApplyICloudPasswords(DPPatch *patch) { DPRegisterHost(patch->on); 
 DP_PATCH(DPICloudPasswords) {
     .key = @"icloudPasswords",
     .order = 101,
-    .defaultOn = YES,
     .title = @"Allow iCloud Passwords",
-    .detail = @"Lets the iCloud Passwords extension fill passwords from Apple Passwords, which a patched Dia can't reach. While the extension is connected, the original Dia that DiaTweaks keeps runs in the background without windows and talks to Apple Passwords for it. Experimental.",
-    .symbol = @"key.fill",
-    .tint = @"systemBlueColor",
+    .detail = @"AutoFill passwords from Apple Passwords with the iCloud Passwords extension. A patched Dia can’t start Apple’s helper, so each time the extension connects, the original Dia that DiaTweaks keeps opens for a moment, without windows, to start it. Experimental.",
+    .symbol = @"apple.passwords key.fill",
+    .tint = @"systemGreenColor",
     .section = @"Passwords",
     .install = DPInstallICloudPasswords,
     .apply = DPApplyICloudPasswords,
